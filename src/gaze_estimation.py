@@ -1,46 +1,48 @@
-'''
-This is a sample class for a model. You may choose to use it as-is or make any changes to it.
-This has been provided just to give you an idea of how to structure your model class.
-'''
+from generic_model import GenericModel
+import numpy as np
 
-class Model_X:
-    '''
-    Class for the Face Detection Model.
-    '''
-    def __init__(self, model_name, device='CPU', extensions=None):
-        '''
-        TODO: Use this to set your instance variables.
-        '''
-        raise NotImplementedError
+class GazeEstimator(GenericModel):
+    """
+    A class for gaze direction estimation.
+    """
 
-    def load_model(self):
-        '''
-        TODO: You will need to complete this method.
-        This method is for loading the model to the device specified by the user.
-        If your model requires any Plugins, this is where you can load them.
-        '''
-        raise NotImplementedError
+    def __init__(self, device='CPU', extensions=None):
+        """
+        Initializes a new instance of the gaze direction estimation model.
+        """
+        super().__init__(model_name='../models/intel/gaze-estimation-adas-0002/FP32/gaze-estimation-adas-0002', device=device, extensions=extensions)
 
-    def predict(self, image):
-        '''
-        TODO: You will need to complete this method.
-        This method is meant for running predictions on the input image.
-        '''
-        raise NotImplementedError
+        print(self.network.inputs)
 
-    def check_model(self):
-        raise NotImplementedError
+        self.left_eye_input_name = 'left_eye_image'
+        self.left_eye_input_shape = self.network.inputs[self.left_eye_input_name].shape
+        self.right_eye_input_name = 'right_eye_image'
+        self.right_eye_input_shape = self.network.inputs[self.right_eye_input_name].shape
+        self.head_pose_input_name = 'head_pose_angles'
+        self.head_pos_input_shape = self.network.inputs[self.head_pose_input_name].shape
 
-    def preprocess_input(self, image):
-    '''
-    Before feeding the data into the model for inference,
-    you might have to preprocess it. This function is where you can do that.
-    '''
-        raise NotImplementedError
+        self.output_name = 'gaze_vector'
 
-    def preprocess_output(self, outputs):
-    '''
-    Before feeding the output of this model to the next model,
-    you might have to preprocess the output. This function is where you can do that.
-    '''
-        raise NotImplementedError
+
+    def estimate(self, left_eye, right_eye, head_pose_angles):
+        """
+        The model takes three inputs: crop of left eye image, crop of right eye image, and three head pose angles – (yaw, pitch, and roll). 
+        Returns a 3-D vector corresponding to the direction of a person’s gaze in a Cartesian coordinate system in which z-axis is directed from person’s eyes (mid-point between left and right eyes’ centers) to the camera center, 
+        y-axis is vertical, and x-axis is orthogonal to both z,y axes so that (x,y,z) constitute a right-handed coordinate system.
+        """
+        left_eye_preprocessed = self._preprocess_input(left_eye, width=self.left_eye_input_shape[3], height=self.left_eye_input_shape[2])
+        right_eye_preprocessed = self._preprocess_input(right_eye, width=self.right_eye_input_shape[3], height=self.right_eye_input_shape[2])
+        #head_pose_angles_preprocessed = np.asarray(head_pose_angles)
+     
+        input_dict = {
+            self.left_eye_input_name : left_eye_preprocessed,
+            self.right_eye_input_name : right_eye_preprocessed,
+            self.head_pose_input_name : head_pose_angles
+        }
+        
+        output_dict = self.exe_network.infer(input_dict)
+        gaze_vector = output_dict[self.output_name]
+        return tuple(gaze_vector[0])
+
+
+        
