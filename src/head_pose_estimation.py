@@ -1,46 +1,29 @@
-'''
-This is a sample class for a model. You may choose to use it as-is or make any changes to it.
-This has been provided just to give you an idea of how to structure your model class.
-'''
+from generic_model import GenericModel
 
-class Model_X:
-    '''
-    Class for the Face Detection Model.
-    '''
-    def __init__(self, model_name, device='CPU', extensions=None):
-        '''
-        TODO: Use this to set your instance variables.
-        '''
-        raise NotImplementedError
+class HeadPoseEstimator(GenericModel):
+    """
+    A class for head pose estimation.
+    """
 
-    def load_model(self):
-        '''
-        TODO: You will need to complete this method.
-        This method is for loading the model to the device specified by the user.
-        If your model requires any Plugins, this is where you can load them.
-        '''
-        raise NotImplementedError
+    def __init__(self, device='CPU', extensions=None):
+        """
+        Initializes a new head pose estimation model instance.
+        """
 
-    def predict(self, image):
-        '''
-        TODO: You will need to complete this method.
-        This method is meant for running predictions on the input image.
-        '''
-        raise NotImplementedError
+        super().__init__(model_name='../models/intel/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001', device=device, extensions=extensions)
 
-    def check_model(self):
-        raise NotImplementedError
+        self.input_shape = self.network.inputs[self.input_name].shape
 
-    def preprocess_input(self, image):
-    '''
-    Before feeding the data into the model for inference,
-    you might have to preprocess it. This function is where you can do that.
-    '''
-        raise NotImplementedError
+        self.yaw_name = "angle_y_fc"
+        self.pitch_name =  "angle_p_fc"
+        self.roll_name = "angle_r_fc"
 
-    def preprocess_output(self, outputs):
-    '''
-    Before feeding the output of this model to the next model,
-    you might have to preprocess the output. This function is where you can do that.
-    '''
-        raise NotImplementedError
+
+
+    def estimate(self, face_image):
+        face_image_preprocessed = self._preprocess_input(face_image, width=self.input_shape[3], height=self.input_shape[2])
+        #head_pose = self._infer(face_image_preprocessed)
+        input_dict = { self.input_name : face_image_preprocessed }
+        output_dict = self.exe_network.infer(input_dict)
+        head_pose = ( output_dict[self.yaw_name][0,0], output_dict[self.pitch_name][0,0], output_dict[self.roll_name][0,0] )
+        return head_pose
