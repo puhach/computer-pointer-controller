@@ -2,22 +2,27 @@
 import cv2
 from input_feeder import InputFeeder
 from face_detection import FaceDetector
+from facial_landmarks_detection import EyeDetector
 
 
-
-feed = InputFeeder('video', input_file='./bin/demo.mp4')
+feed = InputFeeder('video', input_file='../bin/demo.mp4')
 #feed = InputFeeder('image', input_file='./bin/image.png')
 #feed = InputFeeder('cam')
 
 feed.load_data()
 
-faceDetector = FaceDetector('./models/intel/face-detection-retail-0005/FP32/face-detection-retail-0005', device='CPU', extensions=None)
+faceDetector = FaceDetector(device='CPU', extensions=None)
+
+eyeDetector = EyeDetector(device='CPU', extensions=None)
 
 #for batch in feed.next_batch():
 for frame in feed.next_frame():
     #print('batch:', batch.shape)
-    output = faceDetector.detect(frame)
-    cv2.imshow('face', output)
+    face = faceDetector.extract(frame, confidence=0.5)
+    left_eye, right_eye = eyeDetector.extract(face)
+    cv2.imshow('face', face)
+    cv2.imshow('left eye', left_eye)
+    cv2.imshow('right eye', right_eye)
     cv2.waitKey()
 
 feed.close()
