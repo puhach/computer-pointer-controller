@@ -1,5 +1,6 @@
 from generic_model import GenericModel
 import numpy as np
+import math
 
 class GazeEstimator(GenericModel):
     """
@@ -30,6 +31,10 @@ class GazeEstimator(GenericModel):
         Returns a 3-D vector corresponding to the direction of a person’s gaze in a Cartesian coordinate system in which z-axis is directed from person’s eyes (mid-point between left and right eyes’ centers) to the camera center, 
         y-axis is vertical, and x-axis is orthogonal to both z,y axes so that (x,y,z) constitute a right-handed coordinate system.
         """
+
+        if left_eye is None or left_eye.size<1 or right_eye is None or right_eye.size<1 or head_pose_angles is None:
+            return (0, 0, 0)
+
         left_eye_preprocessed = self._preprocess_input(left_eye, width=self.left_eye_input_shape[3], height=self.left_eye_input_shape[2])
         right_eye_preprocessed = self._preprocess_input(right_eye, width=self.right_eye_input_shape[3], height=self.right_eye_input_shape[2])
         #head_pose_angles_preprocessed = np.asarray(head_pose_angles)
@@ -45,4 +50,3 @@ class GazeEstimator(GenericModel):
         return tuple(gaze_vector[0])
 
 
-        
