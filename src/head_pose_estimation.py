@@ -21,6 +21,9 @@ class HeadPoseEstimator(GenericModel):
 
 
     def estimate(self, face_image):
+        if face_image is None or face_image.size < 1:
+            return None
+
         face_image_preprocessed = self._preprocess_input(face_image, width=self.input_shape[3], height=self.input_shape[2])
         #head_pose = self._infer(face_image_preprocessed)
         input_dict = { self.input_name : face_image_preprocessed }
