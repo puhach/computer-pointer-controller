@@ -6,11 +6,17 @@ from gaze_estimation import GazeEstimator
 from mouse_controller import MouseController
 import helpers
 import cv2
+import argparse
 
+parser = argparse.ArgumentParser(description='Computer Pointer Controller')
+parser.add_argument('--input', type=str, required=True,
+                    help="An input file name or 'cam' to capture input from a webcam.")
 
-source = '../bin/demo.mp4'
+args = parser.parse_args()
+
+#source = '../bin/demo.mp4'
 #source = 'cam'
-feed = InputFeeder(source)
+feed = InputFeeder(args.input)
 faceDetector = FaceDetector(device='CPU', extensions=None)
 eyeDetector = EyeDetector(device='CPU', extensions=None)
 headPoseEstimator = HeadPoseEstimator(device='CPU', extensions=None)
@@ -60,7 +66,7 @@ for frame in feed.next_frame():
     #draw_vector(gaze_vector, face)
     output_frame = helpers.draw_gaze_vector(frame, face_box, gx, gy)
 
-    cv2.imshow(source, output_frame)
+    cv2.imshow(args.input, output_frame)
     if cv2.waitKey(5) & 0xFF == 27:
         break
 
