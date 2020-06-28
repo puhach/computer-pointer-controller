@@ -6,15 +6,13 @@ class GenericModel:
 
     core = IECore()
 
-    '''
+    """
     The parent class for various object detection and recognition models.
-    '''
+    """
     def __init__(self, model_name, device='CPU', extensions=None):
         """
         Initializes the generic model.
         """
-
-        #self.core = IECore()
 
         # OpenVINO 2020.1 loads extensions automatically
         if extensions and device.lower() == 'cpu':
@@ -36,22 +34,18 @@ class GenericModel:
 
 
         self.input_name = next(iter(self.network.inputs))
-        #self.input_shape = self.network.inputs[self.input_name].shape
         self.output_name = next(iter(self.network.outputs))
-        #print(self.network.inputs.items())
-        #print(self.network.inputs['input.1'].shape)
-
-        #print(self.network.outputs)
-
-
 
         self.exe_network = self.core.load_network(network=self.network, device_name=device, num_requests=1)
 
 
-    def detect(self, image):
+    def _infer(self, image):
+        """
+        Feeds an input image to the model for inference.
+        """
         input_dict = { self.input_name : image }
-        out = self.exe_network.infer(input_dict)
-        return out[self.output_name]
+        output_dict = self.exe_network.infer(input_dict)
+        return output_dict[self.output_name]
 
     
     def _preprocess_input(self, image, width, height):
@@ -66,17 +60,3 @@ class GenericModel:
         frame_resized = np.moveaxis(frame_resized, -1, 0)[None,...] # HWC -> BCHW
         return frame_resized
     
-    def _crop(self, image, box):
-        if box:
-            xmin,ymin,xmax,ymax = box
-            return image[ymin:ymax+1, xmin:xmax+1, :]
-        else:
-            return None
-
-    def _fit(self, box, image):
-        if box is None:            
-            return None
-        else:
-            h,w = image.shape[:-1]
-            return tuple([int(coord*dim) for coord, dim in zip(box, [w, h, w, h])])
-
