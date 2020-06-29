@@ -10,23 +10,85 @@ Human vision performs a variety of tasks to interpret the surrounding environmen
 ## Project Set Up and Installation
 *TODO:* Explain the setup procedures to run your project. For instance, this can include your project directory structure, the models you need to download and where to place them etc. Also include details about how to install the dependencies your project requires.
 
-## Demo
-*TODO:* Explain how to run a basic demo of your model.
+### Install the Intel Distribution of OpenVINO Toolkit
 
-## Documentation
-*TODO:* Include any documentation that users might need to better understand your project code. For instance, this is a good place to explain the command line arguments that your project supports.
+The project requires Intel OpenVINO 2020.1 or newer. Older versions should work too, but it's not guaranteed.
+Refer to [this](https://docs.openvinotoolkit.org/2020.1/_docs_install_guides_installing_openvino_linux.html#install-openvino) manual for a step-by-step installation guide.
 
-## Benchmarks
-*TODO:* Include the benchmark results of running your model on multiple hardwares and multiple model precisions. Your benchmarks can include: model loading time, input/output processing time, model inference time etc.
 
-## Results
-*TODO:* Discuss the benchmark results and explain why you are getting the results you are getting. For instance, explain why there is difference in inference time for FP32, FP16 and INT8 models.
+### Install Python libraries
 
-## Stand Out Suggestions
-This is where you can provide information about the stand out suggestions that you have attempted.
+Creating an isolated environment for the project is recommended. It can be done by the following command:
+```
+conda create -n computer-pointer-controller python=3.6
+``` 
 
-### Async Inference
-If you have used Async Inference in your code, benchmark the results and explain its effects on power and performance of your project.
+Now activate the environment:
+```
+conda activate computer-pointer-controller
+```
 
-### Edge Cases
-There will be certain situations that will break your inference flow. For instance, lighting changes or multiple people in the frame. Explain some of the edge cases you encountered in your project and how you solved them to make your project more robust.
+To install prerequisites (argparse and pyautogui) run:
+```
+pip install -r requirements.txt
+```
+
+### Download pre-trained models from OpenVINO Model Zoo
+
+The project requires the following models:
+* face-detection-retail-0005
+* facial-landmarks-35-adas-0002
+* head-pose-estimation-adas-0001
+* gaze-estimation-adas-0002
+
+Model files are expected to reside in <project-folder>/models.
+
+For convenience there is a download_models.sh script in the project root folder which automatically installs the OpenVINO Model Downloader requirements and downloads all the necessary models. Assuming that OpenVINO is installed to the default location, simply run:
+```
+./download_models.sh
+```
+
+In case OpenVINO is installed to a different path, the script should be provided with a Model Downloader directory as an argument:
+```
+./download_models.sh /opt/intel/openvino/deployment_tools/tools/model_downloader
+```
+
+Alternatively, these models can be downloaded via Model Downloader (<OPENVINO_INSTALL_DIR>/deployment_tools/open_model_zoo/tools/downloader) one-by-one:
+```
+./downloader.py --name face-detection-retail-0005 --precisions FP32,FP16,FP32-INT8 --output_dir <project-folder>/models
+./downloader.py --name facial-landmarks-35-adas-0002 --precisions FP32,FP16,FP32-INT8 --output_dir <project-folder>/models
+./downloader.py --name head-pose-estimation-adas-0001 --precisions FP32,FP16,FP32-INT8 --output_dir <project-folder>/models
+./downloader.py --name gaze-estimation-adas-0002 --precisions FP32,FP16,FP32-INT8 --output_dir <project-folder>/models
+```
+
+Consult [this](https://docs.openvinotoolkit.org/2020.1/_tools_downloader_README.html) page for additional details about OpenVINO Model Downloader usage.
+
+### Project directory structure
+
+The project tree should finally look like this:
+```
+├── bin
+│   └── demo.mp4
+├── download_models.sh
+├── models
+│   └── intel
+│       ├── face-detection-retail-0005
+│       ├── facial-landmarks-35-adas-0002
+│       ├── gaze-estimation-adas-0002
+│       └── head-pose-estimation-adas-0001
+├── README.md
+├── requirements.txt
+└── src
+    ├── face_detection.py
+    ├── facial_landmarks_detection.py
+    ├── gaze_estimation.py
+    ├── generic_model.py
+    ├── head_pose_estimation.py
+    ├── helpers.py
+    ├── input_feeder.py
+    ├── main.py
+    └── mouse_controller.py
+```    
+
+
+
