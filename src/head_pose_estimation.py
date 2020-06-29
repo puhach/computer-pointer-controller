@@ -5,12 +5,14 @@ class HeadPoseEstimator(GenericModel):
     A class for head pose estimation.
     """
 
-    def __init__(self, device='CPU', extensions=None):
+    def __init__(self, precision, device='CPU', extensions=None):
         """
         Initializes a new head pose estimation model instance.
         """
 
-        super().__init__(model_name='../models/intel/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001', device=device, extensions=extensions)
+        super().__init__(
+            model_name=f'../models/intel/head-pose-estimation-adas-0001/{precision}/head-pose-estimation-adas-0001', 
+            device=device, extensions=extensions)
 
         self.input_shape = self.network.inputs[self.input_name].shape
 
@@ -30,7 +32,6 @@ class HeadPoseEstimator(GenericModel):
             return None
 
         face_image_preprocessed = self._preprocess_input(face_image, width=self.input_shape[3], height=self.input_shape[2])
-        #head_pose = self._infer(face_image_preprocessed)
         input_dict = { self.input_name : face_image_preprocessed }
         output_dict = self.exe_network.infer(input_dict)
         head_pose = ( output_dict[self.yaw_name][0,0], output_dict[self.pitch_name][0,0], output_dict[self.roll_name][0,0] )

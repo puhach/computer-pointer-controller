@@ -7,11 +7,13 @@ class GazeEstimator(GenericModel):
     A class for gaze direction estimation.
     """
 
-    def __init__(self, device='CPU', extensions=None):
+    def __init__(self, precision, device='CPU', extensions=None):
         """
         Initializes a new instance of the gaze direction estimation model.
         """
-        super().__init__(model_name='../models/intel/gaze-estimation-adas-0002/FP32/gaze-estimation-adas-0002', device=device, extensions=extensions)
+        super().__init__(
+            model_name=f'../models/intel/gaze-estimation-adas-0002/{precision}/gaze-estimation-adas-0002', 
+            device=device, extensions=extensions)
 
         self.left_eye_input_name = 'left_eye_image'
         self.left_eye_input_shape = self.network.inputs[self.left_eye_input_name].shape

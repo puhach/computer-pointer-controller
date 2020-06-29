@@ -8,26 +8,28 @@ import helpers
 import cv2
 import argparse
 
-parser = argparse.ArgumentParser(description='Computer Pointer Controller')
+parser = argparse.ArgumentParser(description="Computer Pointer Controller")
 parser.add_argument('--input', type=str, required=True,
                     help="An input file name or 'cam' to capture input from a webcam.")
 parser.add_argument('--device', type=str, default='cpu', 
-                    help='Device name to perform inference on. Defaults to CPU.')
+                    help="Device name to perform inference on. Defaults to CPU.")
 parser.add_argument('--ext', type=str, default=None,
-                    help='Specify the extension to use with the device.')
+                    help="Specifies the extension to use with the device.")
+parser.add_argument('--precision', type=str, default='FP32',
+                    help="Specifies the model precision to use: FP32, FP16, or FP32-INT8. Default is FP32.")
 parser.add_argument('--failsafe', action='store_true', default=False, 
-                    help="Toggles the fail-safe feature of PyAutoGUI. By default, it's disabled.")
+                    help="Enables the fail-safe feature of PyAutoGUI. By default, it's disabled.")
 parser.add_argument('--clean', action='store_true', default=False,
-                    help='Determines whether to show the output of intermediate models. Default is true.')
+                    help="Enables visualization of intermediate model outputs. Active by default.")
 # TODO: add more arguments
 
 args = parser.parse_args()
 
 feed = InputFeeder(args.input)
-faceDetector = FaceDetector(device=args.device, extensions=args.ext)
-eyeDetector = EyeDetector(device=args.device, extensions=args.ext)
-headPoseEstimator = HeadPoseEstimator(device=args.device, extensions=args.ext)
-gazeEstimator = GazeEstimator(device=args.device, extensions=args.ext)
+faceDetector = FaceDetector(precision=args.precision, device=args.device, extensions=args.ext)
+eyeDetector = EyeDetector(precision=args.precision, device=args.device, extensions=args.ext)
+headPoseEstimator = HeadPoseEstimator(precision=args.precision, device=args.device, extensions=args.ext)
+gazeEstimator = GazeEstimator(precision=args.precision, device=args.device, extensions=args.ext)
 mouseController = MouseController(precision='medium', speed='medium', failsafe=args.failsafe)
 
 for frame in feed.next_frame():

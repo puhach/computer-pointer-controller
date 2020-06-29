@@ -5,12 +5,15 @@ class EyeDetector(GenericModel):
     """
     A class for eye detection and extraction.
     """
-    def __init__(self, device='CPU', extensions=None):
+    def __init__(self, precision, device='CPU', extensions=None):
         """
         Initializes a facial landmark detection model instance.
         """
 
-        super().__init__(model_name='../models/intel/facial-landmarks-35-adas-0002/FP32/facial-landmarks-35-adas-0002', device=device, extensions=extensions)
+        super().__init__(
+            model_name=f'../models/intel/facial-landmarks-35-adas-0002/{precision}/facial-landmarks-35-adas-0002', 
+            device=device, 
+            extensions=extensions)
 
         self.input_shape = self.network.inputs[self.input_name].shape
 
@@ -25,7 +28,6 @@ class EyeDetector(GenericModel):
 
         image_preprocessed = self._preprocess_input(face_image, self.input_shape[3], self.input_shape[2])
         landmarks = super()._infer(image_preprocessed)
-        #testimg = self._draw_landmarks(image, landmarks)
         left_eye_box, right_eye_box = self._get_eye_boxes(landmarks)        
         return helpers.fit(left_eye_box, face_image), helpers.fit(right_eye_box, face_image)
 

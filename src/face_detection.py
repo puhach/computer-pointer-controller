@@ -6,12 +6,15 @@ class FaceDetector(GenericModel):
     A class for the Face Detection Model.
     """
 
-    def __init__(self, device='CPU', extensions=None):
+    def __init__(self, precision, device='CPU', extensions=None):
         """
         Initializes a new instance of the face detection model.
         """
 
-        super().__init__(model_name='../models/intel/face-detection-retail-0005/FP32/face-detection-retail-0005', device=device, extensions=extensions)
+        super().__init__(
+            model_name=f'../models/intel/face-detection-retail-0005/{precision}/face-detection-retail-0005', 
+            device=device, 
+            extensions=extensions)
 
         self.input_shape = self.network.inputs[self.input_name].shape
 
