@@ -15,8 +15,8 @@ class GenericModel:
         """
 
         # OpenVINO 2020.1 loads extensions automatically
-        if extensions and device.lower() == 'cpu':
-            self.core.add_extensions(extensions)
+        if extensions: #and device.lower() == 'cpu':
+            self.core.add_extension(extension_path=extensions, device_name=device)
 
 
         self.model_xml = model_name + '.xml'

@@ -11,16 +11,19 @@ import argparse
 parser = argparse.ArgumentParser(description='Computer Pointer Controller')
 parser.add_argument('--input', type=str, required=True,
                     help="An input file name or 'cam' to capture input from a webcam.")
-parser.add_argument('--device', type=str, default='cpu', help='Device name to perform inference on.')
+parser.add_argument('--device', type=str, default='cpu', 
+                    help='Device name to perform inference on. Defaults to CPU.')
+parser.add_argument('--ext', type=str, default=None,
+                    help='Specify the extension to use with the device.')
 # TODO: add more arguments
 
 args = parser.parse_args()
 
 feed = InputFeeder(args.input)
-faceDetector = FaceDetector(device=args.device, extensions=None)
-eyeDetector = EyeDetector(device=args.device, extensions=None)
-headPoseEstimator = HeadPoseEstimator(device=args.device, extensions=None)
-gazeEstimator = GazeEstimator(device=args.device, extensions=None)
+faceDetector = FaceDetector(device=args.device, extensions=args.ext)
+eyeDetector = EyeDetector(device=args.device, extensions=args.ext)
+headPoseEstimator = HeadPoseEstimator(device=args.device, extensions=args.ext)
+gazeEstimator = GazeEstimator(device=args.device, extensions=args.ext)
 mouseController = MouseController(precision='medium', speed='medium')
 
 for frame in feed.next_frame():
