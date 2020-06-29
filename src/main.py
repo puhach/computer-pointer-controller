@@ -15,8 +15,10 @@ parser.add_argument('--device', type=str, default='cpu',
                     help='Device name to perform inference on. Defaults to CPU.')
 parser.add_argument('--ext', type=str, default=None,
                     help='Specify the extension to use with the device.')
-parser.add_argument('--failsafe', type=bool, default=False, 
+parser.add_argument('--failsafe', action='store_true', default=False, 
                     help="Toggles the fail-safe feature of PyAutoGUI. By default, it's disabled.")
+parser.add_argument('--clean', action='store_true', default=False,
+                    help='Determines whether to show the output of intermediate models. Default is true.')
 # TODO: add more arguments
 
 args = parser.parse_args()
@@ -64,12 +66,10 @@ for frame in feed.next_frame():
     #mouseController.move(gaze_vector[0], gaze_vector[1])
     mouseController.move(gx,gy)
 
-    #cv2.waitKey(1)
-    #if face is not None and face.size>1:
-        #cv2.imshow('face', face)
-    #    cv2.imshow('frame', frame)
-    #draw_vector(gaze_vector, face)
-    output_frame = helpers.draw_gaze_vector(frame, face_box, gx, gy)
+    if args.clean:
+        output_frame = frame
+    else:
+        output_frame = helpers.draw_gaze_vector(frame, face_box, gx, gy)
 
     cv2.imshow(args.input, output_frame)
     if cv2.waitKey(5) & 0xFF == 27:
