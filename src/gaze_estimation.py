@@ -13,8 +13,6 @@ class GazeEstimator(GenericModel):
         """
         super().__init__(model_name='../models/intel/gaze-estimation-adas-0002/FP32/gaze-estimation-adas-0002', device=device, extensions=extensions)
 
-        print(self.network.inputs)
-
         self.left_eye_input_name = 'left_eye_image'
         self.left_eye_input_shape = self.network.inputs[self.left_eye_input_name].shape
         self.right_eye_input_name = 'right_eye_image'
@@ -33,6 +31,7 @@ class GazeEstimator(GenericModel):
         """
 
         if left_eye is None or left_eye.size<1 or right_eye is None or right_eye.size<1 or head_pose_angles is None:
+            print('Skipping gaze estimation: input data is empty')
             return (0, 0, 0)
 
         left_eye_preprocessed = self._preprocess_input(left_eye, width=self.left_eye_input_shape[3], height=self.left_eye_input_shape[2])

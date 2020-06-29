@@ -21,7 +21,12 @@ class HeadPoseEstimator(GenericModel):
 
 
     def estimate(self, face_image):
+        """
+        Takes in a face image and returns the yaw, pitсh, and roll angles in degrees.
+        """
+
         if face_image is None or face_image.size < 1:
+            print('Skipping head pose estimation: the face image is empty')
             return None
 
         face_image_preprocessed = self._preprocess_input(face_image, width=self.input_shape[3], height=self.input_shape[2])

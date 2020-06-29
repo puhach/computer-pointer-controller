@@ -15,19 +15,25 @@ class EyeDetector(GenericModel):
         self.input_shape = self.network.inputs[self.input_name].shape
 
     def detect(self, face_image):
+        """
+        Takes in a face image and returns bounding boxes of the left and right eyes.
+        """
+
         if face_image is None or face_image.size<1:
+            print('Skipping eye detection: the face image is empty')
             return None, None
 
         image_preprocessed = self._preprocess_input(face_image, self.input_shape[3], self.input_shape[2])
         landmarks = super()._infer(image_preprocessed)
         #testimg = self._draw_landmarks(image, landmarks)
         left_eye_box, right_eye_box = self._get_eye_boxes(landmarks)        
-        #return self._fit(left_eye_box, face_image), self._fit(right_eye_box, face_image)
         return helpers.fit(left_eye_box, face_image), helpers.fit(right_eye_box, face_image)
 
     def extract(self, face_image):
+        """
+        Extracts the images of eyes from a face image.
+        """
         left_eye_box, right_eye_box = self.detect(face_image)
-        #return self._crop(face_image, left_eye_box), self._crop(face_image, right_eye_box)
         return helpers.crop(face_image, left_eye_box), helpers.crop(face_image, right_eye_box)
 
 
@@ -37,12 +43,8 @@ class EyeDetector(GenericModel):
         Finds the bounding boxes of eyes given the coordinates of facial landmarks.        
         """
         
-        # The landmarks contain a row-vector of 70 floating point values for 35 landmarks' normed coordinates in the form (x0, y0, x1, y1, ..., x34, y34)
-
-        # [Left Eye] p0, p1: corners of the eye, located on the boundary of the eyeball and the eyelid.
-        # [Right Eye] p2, p3: corners of the eye, located on the boundary of the eyeball and the eyelid.        
-        # [Left Eyebrow] p12: starting point of the upper boundary of the eyebrow; p13: mid-point of the upper arc of the eyebrow; p14: ending point of the upper boundary of the eyebrow.
-        # [Right Eyebrow] p15: starting point of the upper boundary of the eyebrow; p16: mid-point of the upper arc of the eyebrow; p17: ending point of the upper boundary of the eyebrow.
+        # The landmarks contain a row-vector of 70 floating point values for 35 landmarks' 
+        # normed coordinates in the form (x0, y0, x1, y1, ..., x34, y34)
 
         # Left eye
         xmin_l = landmarks[0, 12*2]  # p12: starting point of the upper boundary of the eyebrow        
@@ -53,7 +55,6 @@ class EyeDetector(GenericModel):
         #ymax_l = landmarks[0, 1*2+1] # p1: corner of the eye, located on the boundary of the eyeball and the eyelid
         # p0: corner of the eye, located on the boundary of the eyeball and the eyelid; p14: ending point of the upper boundary of the eyebrow
         ymax_l = helpers.clamp(2*landmarks[0, 0*2+1] - landmarks[0, 14*2+1], 0, 1)
-        #ymax_l = self._clamp(2*landmarks[0, 0*2+1] - landmarks[0, 14*2+1], 0, 1)
 
         # Right eye
         xmin_r = landmarks[0, 15*2] # p15: starting point of the upper boundary of the eyebrow
@@ -63,7 +64,6 @@ class EyeDetector(GenericModel):
         #ymax_r = landmarks[0, 3*2+1] # p3: corner of the eye, located on the boundary of the eyeball and the eyelid
         # p2: corners of the eye, located on the boundary of the eyeball and the eyelid; p15: starting point of the upper boundary of the eyebrow
         ymax_r = helpers.clamp(2*landmarks[0, 2*2+1] - landmarks[0, 15*2+1], 0, 1)
-        #ymax_r = self._clamp(2*landmarks[0, 2*2+1] - landmarks[0, 15*2+1], 0, 1)
 
         return (xmin_l, ymin_l, xmax_l, ymax_l), (xmin_r, ymin_r, xmax_r, ymax_r)
 
