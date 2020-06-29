@@ -15,6 +15,8 @@ parser.add_argument('--device', type=str, default='cpu',
                     help='Device name to perform inference on. Defaults to CPU.')
 parser.add_argument('--ext', type=str, default=None,
                     help='Specify the extension to use with the device.')
+parser.add_argument('--failsafe', type=bool, default=False, 
+                    help="Toggles the fail-safe feature of PyAutoGUI. By default, it's disabled.")
 # TODO: add more arguments
 
 args = parser.parse_args()
@@ -24,7 +26,7 @@ faceDetector = FaceDetector(device=args.device, extensions=args.ext)
 eyeDetector = EyeDetector(device=args.device, extensions=args.ext)
 headPoseEstimator = HeadPoseEstimator(device=args.device, extensions=args.ext)
 gazeEstimator = GazeEstimator(device=args.device, extensions=args.ext)
-mouseController = MouseController(precision='medium', speed='medium')
+mouseController = MouseController(precision='medium', speed='medium', failsafe=args.failsafe)
 
 for frame in feed.next_frame():
     #face = faceDetector.extract(frame, confidence=0.5)
