@@ -5,38 +5,63 @@ class EyeDetector(GenericModel):
     """
     A class for eye detection and extraction.
     """
-    def __init__(self, precision, device='CPU', extensions=None):
+    def __init__(self, precision, concurrency, device='CPU', extensions=None):
         """
         Initializes a facial landmark detection model instance.
         """
 
         super().__init__(
             model_name=f'../models/intel/facial-landmarks-35-adas-0002/{precision}/facial-landmarks-35-adas-0002', 
+            concurrency=concurrency,
             device=device, 
             extensions=extensions)
 
         self.input_shape = self.network.inputs[self.input_name].shape
 
-    def detect(self, face_image):
-        """
-        Takes in a face image and returns bounding boxes of the left and right eyes.
-        """
 
-        if face_image is None or face_image.size<1:
-            print('Skipping eye detection: the face image is empty')
+    def feed_input(self, face_image):
+        image_preprocessed = self._preprocess_input(face_image, self.input_shape[3], self.input_shape[2])
+        super().feed_input(image_preprocessed)
+
+    def consume_output(self, wait_needed):
+        consumed, landmarks = super().consume_output(wait_needed)
+        if consumed and landmarks is not None:
+            eye_boxes = self._get_eye_boxes(landmarks)
+        else:
+            eye_boxes = None
+        return consumed, eye_boxes
+
+    #def preprocess_output(self, left_eye_box, right_eye_box, face_image):
+    def preprocess_output(self, eye_boxes, face_image):
+        if face_image is not None and face_image.size>0 and eye_boxes and eye_boxes[0] and eye_boxes[1]:
+            left_eye_box = helpers.fit(eye_boxes[0], face_image)
+            left_eye = helpers.crop(face_image, left_eye_box)
+            right_eye_box = helpers.fit(eye_boxes[1], face_image)
+            right_eye = helpers.crop(face_image, right_eye_box)
+            return left_eye, right_eye
+        else:
             return None, None
 
-        image_preprocessed = self._preprocess_input(face_image, self.input_shape[3], self.input_shape[2])
-        landmarks = super()._infer(image_preprocessed)
-        left_eye_box, right_eye_box = self._get_eye_boxes(landmarks)        
-        return helpers.fit(left_eye_box, face_image), helpers.fit(right_eye_box, face_image)
-
-    def extract(self, face_image):
-        """
-        Extracts the images of eyes from a face image.
-        """
-        left_eye_box, right_eye_box = self.detect(face_image)
-        return helpers.crop(face_image, left_eye_box), helpers.crop(face_image, right_eye_box)
+#    def detect(self, face_image):
+#        """
+#        Takes in a face image and returns bounding boxes of the left and right eyes.
+#        """
+#
+#        if face_image is None or face_image.size<1:
+#            print('Skipping eye detection: the face image is empty')
+#            return None, None
+#
+#        image_preprocessed = self._preprocess_input(face_image, self.input_shape[3], self.input_shape[2])
+#        landmarks = super()._infer(image_preprocessed)
+#        left_eye_box, right_eye_box = self._get_eye_boxes(landmarks)        
+#        return helpers.fit(left_eye_box, face_image), helpers.fit(right_eye_box, face_image)
+#
+#    def extract(self, face_image):
+#        """
+#        Extracts the images of eyes from a face image.
+#        """
+#        left_eye_box, right_eye_box = self.detect(face_image)
+#        return helpers.crop(face_image, left_eye_box), helpers.crop(face_image, right_eye_box)
 
 
 

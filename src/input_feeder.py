@@ -22,22 +22,29 @@ class InputFeeder:
         if not self.cap.isOpened():
             raise Exception('Failed to open the input: ' + self.input)
         
+    
+    def read_next(self):
+        read, frame = self.cap.read()
+        if read:
+            return frame[:,::-1,:] if self.input=='cam' else frame
+        else:
+            print('Reached the end of the input stream')
+            return None
 
-
-    def next_frame(self):
-        """
-        Yields a new frame read from the source (if available). 
-        In case the source is a webcam, the frame will be automatically reflected.
-        """
-
-        while True:
-            read, frame = self.cap.read()
-            if read:                                
-                # What is left from our point of view is right from the camera viewpoint
-                yield frame[:,::-1,:] if self.input=='cam' else frame
-            else:
-                print('Reached the end of the input stream')
-                break
+#    def next_frame(self):
+#        """
+#        Yields a new frame read from the source (if available). 
+#        In case the source is a webcam, the frame will be automatically reflected.
+#        """
+#
+#        while True:
+#            read, frame = self.cap.read()
+#            if read:                                
+#                # What is left from our point of view is right from the camera viewpoint
+#                yield frame[:,::-1,:] if self.input=='cam' else frame
+#            else:
+#                print('Reached the end of the input stream')
+#                break
 
     #def next_batch(self):
     #    '''

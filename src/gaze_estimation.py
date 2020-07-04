@@ -7,13 +7,13 @@ class GazeEstimator(GenericModel):
     A class for gaze direction estimation.
     """
 
-    def __init__(self, precision, device='CPU', extensions=None):
+    def __init__(self, precision, concurrency, device='CPU', extensions=None):
         """
         Initializes a new instance of the gaze direction estimation model.
         """
         super().__init__(
             model_name=f'../models/intel/gaze-estimation-adas-0002/{precision}/gaze-estimation-adas-0002', 
-            device=device, extensions=extensions)
+            concurrency=concurrency, device=device, extensions=extensions)
 
         self.left_eye_input_name = 'left_eye_image'
         self.left_eye_input_shape = self.network.inputs[self.left_eye_input_name].shape
@@ -25,29 +25,53 @@ class GazeEstimator(GenericModel):
         self.output_name = 'gaze_vector'
 
 
-    def estimate(self, left_eye, right_eye, head_pose_angles):
-        """
-        The model takes three inputs: crop of left eye image, crop of right eye image, and three head pose angles – (yaw, pitch, and roll). 
-        Returns a 3-D vector corresponding to the direction of a person’s gaze in a Cartesian coordinate system in which z-axis is directed from person’s eyes (mid-point between left and right eyes’ centers) to the camera center, 
-        y-axis is vertical, and x-axis is orthogonal to both z,y axes so that (x,y,z) constitute a right-handed coordinate system.
-        """
-
-        if left_eye is None or left_eye.size<1 or right_eye is None or right_eye.size<1 or head_pose_angles is None:
-            print('Skipping gaze estimation: input data is empty')
-            return (0, 0, 0)
-
-        left_eye_preprocessed = self._preprocess_input(left_eye, width=self.left_eye_input_shape[3], height=self.left_eye_input_shape[2])
-        right_eye_preprocessed = self._preprocess_input(right_eye, width=self.right_eye_input_shape[3], height=self.right_eye_input_shape[2])
-        #head_pose_angles_preprocessed = np.asarray(head_pose_angles)
-     
-        input_dict = {
-            self.left_eye_input_name : left_eye_preprocessed,
-            self.right_eye_input_name : right_eye_preprocessed,
-            self.head_pose_input_name : head_pose_angles
-        }
+    def feed_input(self, left_eye, right_eye, head_pose_angles):
+        if left_eye is not None and right_eye is not None and left_eye.size>0 and right_eye.size>0 and head_pose_angles:
+            left_eye_preprocessed = self._preprocess_input(left_eye, width=self.left_eye_input_shape[3], height=self.left_eye_input_shape[2])
+            right_eye_preprocessed = self._preprocess_input(right_eye, width=self.right_eye_input_shape[3], height=self.right_eye_input_shape[2])
         
-        output_dict = self.exe_network.infer(input_dict)
-        gaze_vector = output_dict[self.output_name]
-        return tuple(gaze_vector[0])
+            input_dict = {
+                self.left_eye_input_name : left_eye_preprocessed,
+                self.right_eye_input_name : right_eye_preprocessed,
+                self.head_pose_input_name : head_pose_angles
+            }
+        else:
+            input_dict = None
+
+        super().feed_input_dict(input_dict)
+
+    def consume_output(self, wait):
+        consumed, outputs = super().consume_output(wait)
+        if consumed and outputs is not None:
+            gaze_vector = tuple(outputs[0])
+        else:
+            gaze_vector = (0, 0, 0)
+        return consumed, gaze_vector
+
+
+#    def estimate(self, left_eye, right_eye, head_pose_angles):
+#        """
+#        The model takes three inputs: crop of left eye image, crop of right eye image, and three head pose angles – (yaw, pitch, and roll). 
+#        Returns a 3-D vector corresponding to the direction of a person’s gaze in a Cartesian coordinate system in which z-axis is directed from person’s eyes (mid-point between left and right eyes’ centers) to the camera center, 
+#        y-axis is vertical, and x-axis is orthogonal to both z,y axes so that (x,y,z) constitute a right-handed coordinate system.
+#        """
+#
+#        if left_eye is None or left_eye.size<1 or right_eye is None or right_eye.size<1 or head_pose_angles is None:
+#            print('Skipping gaze estimation: input data is empty')
+#            return (0, 0, 0)
+#
+#        left_eye_preprocessed = self._preprocess_input(left_eye, width=self.left_eye_input_shape[3], height=self.left_eye_input_shape[2])
+#        right_eye_preprocessed = self._preprocess_input(right_eye, width=self.right_eye_input_shape[3], height=self.right_eye_input_shape[2])
+#        #head_pose_angles_preprocessed = np.asarray(head_pose_angles)
+#     
+#        input_dict = {
+#            self.left_eye_input_name : left_eye_preprocessed,
+#            self.right_eye_input_name : right_eye_preprocessed,
+#            self.head_pose_input_name : head_pose_angles
+#        }
+#        
+#        output_dict = self.exe_network.infer(input_dict)
+#        gaze_vector = output_dict[self.output_name]
+#        return tuple(gaze_vector[0])
 
 

@@ -1,4 +1,5 @@
 from openvino.inference_engine import IENetwork, IECore
+from collections import deque
 import cv2
 import numpy as np
 
@@ -9,7 +10,7 @@ class GenericModel:
     """
     The parent class for various object detection and recognition models.
     """
-    def __init__(self, model_name, device='CPU', extensions=None):
+    def __init__(self, model_name, concurrency=0, device='CPU', extensions=None):
         """
         Initializes the generic model.
         """
@@ -36,16 +37,19 @@ class GenericModel:
         self.input_name = next(iter(self.network.inputs))
         self.output_name = next(iter(self.network.outputs))
 
-        self.exe_network = self.core.load_network(network=self.network, device_name=device, num_requests=1)
+        self.exe_network = self.core.load_network(network=self.network, device_name=device, num_requests=max(1, concurrency))
 
+        self.concurrency = concurrency
+        self.waiting_queue = deque()
+        self.output_queue = deque()
 
-    def _infer(self, image):
-        """
-        Feeds an input image to the model for inference.
-        """
-        input_dict = { self.input_name : image }
-        output_dict = self.exe_network.infer(input_dict)
-        return output_dict[self.output_name]
+#    def _infer(self, image):
+#        """
+#        Feeds an input image to the model for inference.
+#        """
+#        input_dict = { self.input_name : image }
+#        output_dict = self.exe_network.infer(input_dict)
+#        return output_dict[self.output_name]
 
     
     def _preprocess_input(self, image, width, height):
@@ -56,7 +60,100 @@ class GenericModel:
         3) Adds the batch dimension
         """
 
-        frame_resized = cv2.resize(src=image, dsize=(width, height))
-        frame_resized = np.moveaxis(frame_resized, -1, 0)[None,...] # HWC -> BCHW
-        return frame_resized
+        if image is not None and image.size>0 and width>0 and height>0:
+            frame_resized = cv2.resize(src=image, dsize=(width, height))
+            frame_resized = np.moveaxis(frame_resized, -1, 0)[None,...] # HWC -> BCHW
+            return frame_resized
+        else:
+            return None
     
+
+    def feed_input(self, image):
+        if image is None:
+            input_dict = None
+        else:
+            input_dict = { self.input_name : image }
+        self.feed_input_dict(input_dict)
+
+    def feed_input_dict(self, input_dict):
+
+        if self.concurrency == 0:   # Synchronous inference            
+            if input_dict:
+                output_dict = self.exe_network.requests[0].infer(input_dict)
+                self.output_queue.append(output_dict)
+            else:
+                self.output_queue.append(None)
+        
+        else:   # Asyncronous inference
+
+            #if self.request_count >= self.concurrency:
+            if len(self.waiting_queue) >= self.concurrency:
+                # Can't start more requests, wait until something is finished
+                cur_request = self.waiting_queue.popleft()            
+                cur_request.wait(-1)
+                # TODO: can push get_perf_counts too
+                #self.output_queue.append(cur_request)
+                self.output_queue.append(cur_request.outputs)
+                #self.request_count -= 1
+            else:
+                cur_request = self.exe_network.requests[len(self.waiting_queue)]
+
+            if input_dict:  
+                cur_request.async_infer(input_dict)
+                self.waiting_queue.append(cur_request)
+            else:
+                # Requests for previous frames might be still running,
+                # so we can't produce output before they are done
+                self.waiting_queue.append(None)
+
+            #self.request_id = (self.request_id + 1) % self.concurrency
+            #self.request_count += 1
+
+#    def has_output(self):
+#        # https://docs.openvinotoolkit.org/latest/namespaceInferenceEngine.html#a2ce897aa6a353c071958fe379f5d6421
+#        # OK = 0, GENERAL_ERROR = -1, NOT_IMPLEMENTED = -2, NETWORK_NOT_LOADED = -3,
+#        # PARAMETER_MISMATCH = -4, NOT_FOUND = -5, OUT_OF_BOUNDS = -6, UNEXPECTED = -7,
+#        # REQUEST_BUSY = -8, RESULT_NOT_READY = -9, NOT_ALLOCATED = -10, INFER_NOT_STARTED = -11,
+#        # NETWORK_NOT_READ = -12 
+#        return len(self.output_queue) > 0 or self.exe_network.requests[self.request_id].wait(0)==0
+
+
+#    def consume_output_dict(self):
+#        # check if a new output is ready
+#        if self.exe_network.requests[self.request_id].wait(0) == 0: 
+#            self.output_queue.push(self.exe_network.requests[self.request_id].outputs)
+#
+#        assert len(self.output_queue) > 0
+#        # TODO: can get performance counters too
+#        # TODO: pay attention to the latency attribute (might be useful for time measurement)
+#        output_dict = self.output_queue.popLeft()
+#        return output_dict
+
+    def consume_output_dict(self, wait):
+        if self.output_queue:
+            return True, self.output_queue.popleft()
+
+        if self.waiting_queue:
+            #timeout = -1 if wait else 0
+            request = self.waiting_queue[0]
+            if request:
+                if wait:    
+                    self.waiting_queue.popleft()
+                    request.wait(-1)                    
+                    return True, request.outputs
+                else:   # don't wait                    
+                    if request.wait(0) == 0:    # result available
+                        self.waiting_queue.popleft()
+                        return True, request.outputs
+                    else:
+                        return False, None
+            else:   # request is None
+                return True, None
+
+        # Both queues are empty, nothing to wait for
+        return False, None  
+
+    def consume_output(self, wait):
+        consumed, output_dict = self.consume_output_dict(wait)
+        output = output_dict[self.output_name] if output_dict else None
+        return consumed, output
