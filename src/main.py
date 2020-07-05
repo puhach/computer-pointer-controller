@@ -25,7 +25,8 @@ parser.add_argument('--failsafe', action='store_true', default=False,
                     help="Enables the fail-safe feature of PyAutoGUI. By default, it's disabled.")
 parser.add_argument('--clean', action='store_true', default=False,
                     help="Enables visualization of intermediate model outputs. Active by default.")
-
+parser.add_argument('--stats', action='store_true', default=False,
+                    help="Prints per-layer performance statistics. Disabled by default.")
 # TODO: add more arguments
 
 args = parser.parse_args()
@@ -106,5 +107,11 @@ while not done:
         wait_needed = not gaze_vector_consumed and not head_pose_consumed and not eyes_consumed and not face_consumed
         done = len(q)>0
     
-
 feed.close()
+
+if args.stats:
+    print('\nLayer-wise Execution Time')
+    faceDetector.print_stats(title="\nFace Detector")
+    eyeDetector.print_stats(title="\nEye Detector")
+    headPoseEstimator.print_stats(title="\nHead Pose Estimator")
+    gazeEstimator.print_stats(title="\nGaze Direction Estimator")

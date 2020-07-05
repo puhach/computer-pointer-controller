@@ -48,5 +48,3 @@ class GazeEstimator(GenericModel):
         else:
             gaze_vector = (0, 0, 0)
         return consumed, gaze_vector
-
-

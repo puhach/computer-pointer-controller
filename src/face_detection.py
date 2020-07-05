@@ -42,7 +42,6 @@ class FaceDetector(GenericModel):
             face_img = helpers.crop(frame, face_box)
             return face_img, face_box
 
-
     def _get_bounding_box(self, detections, confidence):
         """
         An auxiliary function which finds the first face bounding box with sufficient detection confidence.

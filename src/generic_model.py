@@ -1,5 +1,5 @@
 from openvino.inference_engine import IENetwork, IECore
-from collections import deque
+from collections import deque, Counter
 import cv2
 import numpy as np
 
@@ -43,23 +43,8 @@ class GenericModel:
         self.request_index = 0
         self.waiting_queue = deque()
         self.output_queue = deque()
+        self.stats = Counter()
 
-
-    def _preprocess_input(self, image, width, height):
-        """
-        Performs default preprocessing of the input:
-        1) Resizes the image to the desired resolution
-        2) Converts the channel order from HWC to CHW
-        3) Adds the batch dimension
-        """
-
-        if image is not None and image.size>0 and width>0 and height>0:
-            frame_resized = cv2.resize(src=image, dsize=(width, height))
-            frame_resized = np.moveaxis(frame_resized, -1, 0)[None,...] # HWC -> BCHW
-            return frame_resized
-        else:
-            return None
-    
 
     def feed_input(self, image):
         if image is None:
@@ -75,6 +60,7 @@ class GenericModel:
             if input_dict:
                 self.exe_network.requests[0].infer(input_dict)
                 self.output_queue.append(self.exe_network.requests[0].outputs)
+                self._augment_perf_counts(self.exe_network.requests[0].get_perf_counts())
             else:
                 self.output_queue.append(None)
         
@@ -87,11 +73,17 @@ class GenericModel:
                 # We can remove a None request from the queue (so it's no longer overloaded) and pick the next
                 # free request (there must be one since we shortened the waiting queue and the number of busy 
                 # requests is always less than or equal to the length of the queue).
-                if cur_request and cur_request.wait(-1)==0:
-                    # TODO: can push get_perf_counts too
-                    self.output_queue.append(cur_request.outputs)
+                if cur_request:
+                    output_dict = cur_request.outputs if cur_request.wait(-1)==0 else None
+                    self._augment_perf_counts(cur_request.get_perf_counts())
                 else:
-                    self.output_queue.append(None)
+                    output_dict = None
+                self.output_queue.append(output_dict)
+                #if cur_request and cur_request.wait(-1)==0:
+                #    self.output_queue.append(cur_request.outputs)
+                #    self._augment_perf_counts(cur_request.get_perf_counts())
+                #else:
+                #    self.output_queue.append(None)
             else:
                 cur_request = None
 
@@ -114,16 +106,18 @@ class GenericModel:
             return True, self.output_queue.popleft()
 
         if self.waiting_queue:
-            #timeout = -1 if wait else 0
             request = self.waiting_queue[0]
             if request:
                 if wait:    
-                    self.waiting_queue.popleft()
-                    request.wait(-1)                    
-                    return True, request.outputs
+                    status = request.wait(-1)      
+                    outputs = request.outputs if status==0 else None
+                    self.waiting_queue.popleft()                    
+                    self._augment_perf_counts(request.get_perf_counts())              
+                    return True, outputs
                 else:   # don't wait                    
                     if request.wait(0) == 0:    # result available
                         self.waiting_queue.popleft()
+                        self._augment_perf_counts(request.get_perf_counts())
                         return True, request.outputs
                     else:
                         return False, None
@@ -137,3 +131,53 @@ class GenericModel:
         consumed, output_dict = self.consume_output_dict(wait)
         output = output_dict[self.output_name] if output_dict else None
         return consumed, output
+
+
+    def get_stats(self):
+        """
+        Returns the dictionary containing layer-wise performance counters.
+        """
+        return self.stats
+
+    def reset_stats(self):
+        """
+        Resets layer performance counters to zero.
+        """
+        self.stats = Counter()
+
+    def print_stats(self, title):
+        """
+        Prints layer-wise performance to the console.
+        """
+        print(title)
+        if self.stats:
+            for layer_name, execution_time in self.stats.items():
+                print(f'{layer_name} : {execution_time} ms')
+        else:
+            print('No data')
+
+
+    def _preprocess_input(self, image, width, height):
+        """
+        Performs default preprocessing of the input:
+        1) Resizes the image to the desired resolution
+        2) Converts the channel order from HWC to CHW
+        3) Adds the batch dimension
+        Protected method, to be used by GenericModel and descendant classes.
+        """
+
+        if image is not None and image.size>0 and width>0 and height>0:
+            frame_resized = cv2.resize(src=image, dsize=(width, height))
+            frame_resized = np.moveaxis(frame_resized, -1, 0)[None,...] # HWC -> BCHW
+            return frame_resized
+        else:
+            return None
+    
+
+    def _augment_perf_counts(self, perf_counts):
+        """
+        Accumulates performance counters for each layer in the model.
+        Private method, to be used by GenericModel only.
+        """
+        layer_timings = { layer_name : v.get('real_time', 0) for layer_name, v in perf_counts.items() }
+        self.stats.update(layer_timings)
