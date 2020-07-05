@@ -37,25 +37,6 @@ headPoseEstimator = HeadPoseEstimator(precision=args.precision, concurrency=args
 gazeEstimator = GazeEstimator(precision=args.precision, concurrency=args.concurrency, device=args.device, extensions=args.ext)
 mouseController = MouseController(precision='medium', speed='medium', failsafe=args.failsafe)
 
-# Synchronous inference
-#for frame in feed.next_frame():    
-#    face, face_box = faceDetector.extract(frame, confidence=0.5)
-#    left_eye, right_eye = eyeDetector.extract(face)
-#    head_pose_angles = headPoseEstimator.estimate(face)
-#    gx,gy,_ = gazeEstimator.estimate(left_eye, right_eye, head_pose_angles)
-#
-#    mouseController.move(gx,gy)
-#
-#    if args.clean:
-#        output_frame = frame
-#    else:
-#        output_frame = helpers.draw_gaze_vector(frame, face_box, gx, gy)
-#
-#    cv2.imshow(args.input, output_frame)
-#    if cv2.waitKey(5) & 0xFF == 27:
-#        break
-
-# Async inference (experimental)
 q = deque()
 faces_produced = 0
 head_poses_produced = 0
@@ -75,7 +56,8 @@ while not done:
         hpae_consumed -= 1
         if gaze_vector:
             gx, gy, _ = gaze_vector
-            mouseController.move(gx, gy)
+            # TEST!
+            #mouseController.move(gx, gy)
 
             if args.clean:
                 output_frame = frame
@@ -109,11 +91,9 @@ while not done:
 
     face_consumed, face_box = faceDetector.consume_output(wait_needed, confidence=0.5)
     if face_consumed:        
-        #face_box = helpers.fit(face_box, frame)
         face_img, face_box = faceDetector.preprocess_output(face_box, frame=q[faces_produced][0])
         q[faces_produced][1] = face_box
         faces_produced += 1
-        #face_img = helpers.crop(frame, box=face_box)
         eyeDetector.feed_input(face_img)
         headPoseEstimator.feed_input(face_img)
 
@@ -126,142 +106,5 @@ while not done:
         wait_needed = not gaze_vector_consumed and not head_pose_consumed and not eyes_consumed and not face_consumed
         done = len(q)>0
     
-
-"""
-q = deque() # (Original Frame, Face Box, Eye Boxes, Head Pose)
-face_boxes_produced = 0
-eyes_produced = 0
-head_poses_produced = 0
-#head_poses_and_eyes_consumed = 0
-gaze_vectors_produced = 0
-wait_needed = False
-done = False
-
-while not done:
-
-    if gaze_vectors_produced > 0:
-        frame, face_box, _, _, gaze_vector = q.popLeft()
-        gaze_vectors_produced -= 1
-        head_poses_produced -= 1
-        eyes_produced -= 1
-        face_boxes_produced -= 1
-        if gaze_vector:
-            gx, gy, _ = gaze_vector
-            mouseController.move(gx, gy)
-
-            if args.clean:
-                output_frame = frame
-            else:
-                output_frame = helpers.draw_gaze_vector(frame, face_box, gx, gy)
-
-        else:   # gaze vector is None
-            output_frame = frame    # show the original frame
-        
-        cv2.imshow(args.input, output_frame)
-        if cv2.waitKey(5) & 0xFF == 27:
-            break
-                
-
-    consumed, gaze_vector = gazeEstimator.consume_output(wait_needed)
-    if consumed:
-        q[gaze_vectors_produced][4] = gaze_vector
-        gaze_vectors_produced += 1
-
-
-    eyes_consumed, eyes = eyeDetector.consume_output(wait_needed)
-    if eyes_consumed:
-        #if left_eye is None or left_eye.size < 1 or right_eye is None or right_eye.size < 1:
-        #    q[eyes_produced][2] = None
-        #else:
-        #    q[eyes_produced][2] = (left_eye, right_eye)
-        q[eyes_produced][2] = eyes
-        eyes_produced += 1
-        
-
-    head_pose_consumed, head_pose = headPoseEstimator.consume_output(wait_needed)
-    if head_pose_consumed:
-        q[head_poses_produced][3] = head_pose   # always not None
-        head_poses_produced += 1
-
-
-    if (eyes_consumed or head_pose_consumed) and eyes_produced == head_poses_produced:
-        eyes = q[head_poses_produced][2]   # can be None
-        head_pose_angles = q[eyes_produced][3]  # always not None
-        if eyes:
-            gazeEstimator.feed_input(eyes, head_pose_angles)
-        else:
-            q[gaze_vectors_produced][4] = None
-            gaze_vectors_produced += 1
-            # result violates the order!
-
-
-    face_consumed, face_img, face_box = faceDetector.consume_output(wait_needed)
-    if face_consumed:
-        if face_box is None or face_box.size < 1:
-            q[face_boxes_produced][4] = None
-            face_boxes_produced += 1
-            # What about eyes, head pose?
-        else:
-            q[face_boxes_produced][1] = face_box
-            face_boxes_produced += 1
-            eyeDetector.feed_input(face_img)
-            headPoseEstimator.feed_input(face_img)
-"""
-
-""" 
-    #p = deque()
-    face_box_cursor = 0
-    eyes_cursor = 0
-
-    while not done:
-    if gazeEstimator.hasOutput():
-        # Both frame and face_box must be available here
-        # (otherwise there would be no gazeEstimator's output)
-        frame = q.popLeft()
-        face_box = p.popLeft()
-        gx,gy,_ = gazeEstimator.consumeOutput()
-        
-        mouseController.move(gx, gy)
-
-        if args.clean:
-            output_frame = frame
-        else:
-            output_frame = helpers.draw_gaze_vector(frame, face_box, gx, gy)
-
-        cv2.imshow(args.input, output_frame)
-        if cv2.waitKey(5) & 0xFF == 27:
-            break
-
-    if eyeDetector.hasOutput() and headPoseEstimator.hasOutput():
-        left_eye, right_eye = eyeDetector.consumeOutput()
-        head_pose_angles = headPoseEstimator.consumeOutput()
-        if left_eye is None or left_eye.size < 1 or right_eye is None or right_eye.size < 1 or head_pose_angles is None:
-            del q[eyes_cursor]  # remove the original frame and the 
-        else:   # ok
-            eyes_cursor += 1    # advance the cursor
-            gazeEstimator.feedInput(left_eye, right_eye, head_pose_angles)  # block if too many requests
-
-    if faceDetector.hasOutput():
-        face, face_box = faceDetector.consumeOutput()
-        # we need the face box for drawing intermediate results
-        if face_box is not None and face_box.size>0:
-            q[face_box_cursor][1] = face_box
-            face_box_cursor += 1
-            #p.push(face_box)    
-            eyeDetector.feedInput(face) # block if too many requests
-            headPoseEstimator.feedInput(face)   # block if too many requests
-        else:   # remove the original frame and all associated data from the queue
-            del q[face_box_cursor]
-
-
-    frame = feed.read_next()
-    if frame:
-        q.push((frame, None))
-        faceDetector.feedInput(frame, confidence=0.5)   # block if too many requests
-
-    done = q.isEmpty()
- """
-
-
 
 feed.close()

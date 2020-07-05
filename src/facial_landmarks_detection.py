@@ -23,6 +23,7 @@ class EyeDetector(GenericModel):
         image_preprocessed = self._preprocess_input(face_image, self.input_shape[3], self.input_shape[2])
         super().feed_input(image_preprocessed)
 
+
     def consume_output(self, wait_needed):
         consumed, landmarks = super().consume_output(wait_needed)
         if consumed and landmarks is not None:
@@ -31,7 +32,7 @@ class EyeDetector(GenericModel):
             eye_boxes = None
         return consumed, eye_boxes
 
-    #def preprocess_output(self, left_eye_box, right_eye_box, face_image):
+
     def preprocess_output(self, eye_boxes, face_image):
         if face_image is not None and face_image.size>0 and eye_boxes and eye_boxes[0] and eye_boxes[1]:
             left_eye_box = helpers.fit(eye_boxes[0], face_image)
@@ -41,28 +42,6 @@ class EyeDetector(GenericModel):
             return left_eye, right_eye
         else:
             return None, None
-
-#    def detect(self, face_image):
-#        """
-#        Takes in a face image and returns bounding boxes of the left and right eyes.
-#        """
-#
-#        if face_image is None or face_image.size<1:
-#            print('Skipping eye detection: the face image is empty')
-#            return None, None
-#
-#        image_preprocessed = self._preprocess_input(face_image, self.input_shape[3], self.input_shape[2])
-#        landmarks = super()._infer(image_preprocessed)
-#        left_eye_box, right_eye_box = self._get_eye_boxes(landmarks)        
-#        return helpers.fit(left_eye_box, face_image), helpers.fit(right_eye_box, face_image)
-#
-#    def extract(self, face_image):
-#        """
-#        Extracts the images of eyes from a face image.
-#        """
-#        left_eye_box, right_eye_box = self.detect(face_image)
-#        return helpers.crop(face_image, left_eye_box), helpers.crop(face_image, right_eye_box)
-
 
 
     def _get_eye_boxes(self, landmarks):
@@ -94,27 +73,4 @@ class EyeDetector(GenericModel):
 
         return (xmin_l, ymin_l, xmax_l, ymax_l), (xmin_r, ymin_r, xmax_r, ymax_r)
 
-
-
-    #def _adjust(self, box, is_left):
-    #    xmin, ymin, xmax, ymax = box
-    #
-    #    if xmax < xmin:
-    #        xmin, xmax = xmax, xmin
-    #
-    #    if ymax < ymin:
-    #        ymin, ymax = ymax, ymin
-    #
-    #    if xmax-xmin < 0.7*(ymax-ymin):
-    #        print('Eye width is too small')
-    #        if is_left: # xmin may be occluded for the left eye
-    #            xmin = max(0, xmax - ymax + ymin)
-    #        else:   # xmax may be occluded for the right eye
-    #            xmax = xmin + ymax - ymin
-    #
-    #    elif ymax-ymin < 0.7*(xmax-xmin):
-    #        print('Eye height is too small')
-    #        ymax = ymin + xmax-xmin
-    #
-    #    return (xmin, ymin, xmax, ymax)
 

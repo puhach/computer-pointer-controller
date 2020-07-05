@@ -44,15 +44,7 @@ class GenericModel:
         self.waiting_queue = deque()
         self.output_queue = deque()
 
-#    def _infer(self, image):
-#        """
-#        Feeds an input image to the model for inference.
-#        """
-#        input_dict = { self.input_name : image }
-#        output_dict = self.exe_network.infer(input_dict)
-#        return output_dict[self.output_name]
 
-    
     def _preprocess_input(self, image, width, height):
         """
         Performs default preprocessing of the input:
@@ -75,6 +67,7 @@ class GenericModel:
         else:
             input_dict = { self.input_name : image }
         self.feed_input_dict(input_dict)
+
 
     def feed_input_dict(self, input_dict):
 
@@ -115,28 +108,6 @@ class GenericModel:
                 # so we can't produce output before they are done
                 self.waiting_queue.append(None)
 
-            #self.request_id = (self.request_id + 1) % self.concurrency
-            #self.request_count += 1
-
-#    def has_output(self):
-#        # https://docs.openvinotoolkit.org/latest/namespaceInferenceEngine.html#a2ce897aa6a353c071958fe379f5d6421
-#        # OK = 0, GENERAL_ERROR = -1, NOT_IMPLEMENTED = -2, NETWORK_NOT_LOADED = -3,
-#        # PARAMETER_MISMATCH = -4, NOT_FOUND = -5, OUT_OF_BOUNDS = -6, UNEXPECTED = -7,
-#        # REQUEST_BUSY = -8, RESULT_NOT_READY = -9, NOT_ALLOCATED = -10, INFER_NOT_STARTED = -11,
-#        # NETWORK_NOT_READ = -12 
-#        return len(self.output_queue) > 0 or self.exe_network.requests[self.request_id].wait(0)==0
-
-
-#    def consume_output_dict(self):
-#        # check if a new output is ready
-#        if self.exe_network.requests[self.request_id].wait(0) == 0: 
-#            self.output_queue.push(self.exe_network.requests[self.request_id].outputs)
-#
-#        assert len(self.output_queue) > 0
-#        # TODO: can get performance counters too
-#        # TODO: pay attention to the latency attribute (might be useful for time measurement)
-#        output_dict = self.output_queue.popLeft()
-#        return output_dict
 
     def consume_output_dict(self, wait):
         if self.output_queue:
