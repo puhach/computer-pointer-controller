@@ -80,8 +80,8 @@ class GenericModel:
 
         if self.concurrency == 0:   # Synchronous inference            
             if input_dict:
-                output_dict = self.exe_network.requests[0].infer(input_dict)
-                self.output_queue.append(output_dict)
+                self.exe_network.requests[0].infer(input_dict)
+                self.output_queue.append(self.exe_network.requests[0].outputs)
             else:
                 self.output_queue.append(None)
         
