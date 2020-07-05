@@ -125,3 +125,13 @@ This project can use models in three precisions: FP32, FP16, and FP32-INT8. The 
 
 These results have been obtained in the silent mode (without video output and mouse control) using the "demo.mp4" input file. Each test was run 3 times, the measured time was then averaged. Model loading time for FP32 and FP16 precisions was around 1 second. For FP32-INT8 it was around 4.5 seconds.
 
+
+## Results
+*TODO:* Discuss the benchmark results and explain why you are getting the results you are getting. For instance, explain why there is difference in inference time for FP32, FP16 and INT8 models.
+
+These benchmark results suggest that models in FP32 precision work faster on my hardware. This is probably because CPU is optimized for FP32 precision, lower precision models may incur computational overhead connected with internal upscaling to FP32. However, on different hardware lower precision models may show better performance due to reduced memory usage and faster data transfer. 
+
+Another point to notice is asynchronous inference, which improves performance regardless of the precision used. That said, increasing the number of parallel requests does not seem to speed up things further. This is again hardware-dependent: Xeon processors and newer Core processors are likely to be capable of doing more requests simultaneously. 
+
+As far as accuracy is concerned, no visible differences were noticed between FP32, FP16, and FP32-INT8 models.
+
