@@ -5,7 +5,7 @@ def crop(image, box):
     """
     Extracts a part of the image specified by the bounding box.
     """
-    if box:
+    if box and image is not None:
         xmin,ymin,xmax,ymax = box
         return image[ymin:ymax+1, xmin:xmax+1, :]
     else:
@@ -15,7 +15,7 @@ def fit(box, image):
     """
     Scales the bounding box to the image size.
     """
-    if box is None:            
+    if box is None or image is None:            
         return None
     else:
         h,w = image.shape[:-1]
