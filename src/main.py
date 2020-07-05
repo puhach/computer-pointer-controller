@@ -9,6 +9,9 @@ import helpers
 import cv2
 import argparse
 
+
+print('Initialization...')
+
 parser = argparse.ArgumentParser(description="Computer Pointer Controller")
 parser.add_argument('--input', type=str, required=True,
                     help="An input file name or 'cam' to capture input from a webcam.")
@@ -27,6 +30,9 @@ parser.add_argument('--clean', action='store_true', default=False,
                     help="Enables visualization of intermediate model outputs. Active by default.")
 parser.add_argument('--stats', action='store_true', default=False,
                     help="Prints per-layer performance statistics. Disabled by default.")
+parser.add_argument('--silent', action='store_true', default=False, 
+                    help="Enables the silent mode when video output and the mouse control feature "
+                        "are disabled. Useful for performance measurement. Disabled by default.")
 # TODO: add more arguments
 
 args = parser.parse_args()
@@ -37,6 +43,9 @@ eyeDetector = EyeDetector(precision=args.precision, concurrency=args.concurrency
 headPoseEstimator = HeadPoseEstimator(precision=args.precision, concurrency=args.concurrency, device=args.device, extensions=args.ext)
 gazeEstimator = GazeEstimator(precision=args.precision, concurrency=args.concurrency, device=args.device, extensions=args.ext)
 mouseController = MouseController(precision='medium', speed='medium', failsafe=args.failsafe)
+
+
+print('Running...')
 
 q = deque()
 faces_produced = 0
@@ -55,22 +64,23 @@ while not done:
         eyes_produced -= 1
         head_poses_produced -= 1
         hpae_consumed -= 1
-        if gaze_vector:
-            gx, gy, _ = gaze_vector
-            # TEST!
-            #mouseController.move(gx, gy)
 
-            if args.clean:
-                output_frame = frame
-            else:
-                output_frame = helpers.draw_gaze_vector(frame, face_box, gx, gy)
+        if not args.silent:
+            if gaze_vector:
+                gx, gy, _ = gaze_vector            
+                mouseController.move(gx, gy)
 
-        else:   # gaze vector is None
-            output_frame = frame    # show the original frame
+                if args.clean:
+                    output_frame = frame
+                else:
+                    output_frame = helpers.draw_gaze_vector(frame, face_box, gx, gy)
 
-        cv2.imshow(args.input, output_frame)
-        if cv2.waitKey(5) & 0xFF == 27:
-            break
+            else:   # gaze vector is None
+                output_frame = frame    # show the original frame
+
+            cv2.imshow(args.input, output_frame)
+            if cv2.waitKey(5) & 0xFF == 27:
+                break
 
     if hpae_consumed < min(head_poses_produced, eyes_produced):
         left_eye, right_eye = q[hpae_consumed][2]
