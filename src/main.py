@@ -8,7 +8,7 @@ from collections import deque
 import helpers
 import cv2
 import argparse
-
+import time
 
 print('Initialization...')
 
@@ -57,6 +57,7 @@ eyes_produced = 0
 hpae_consumed = 0
 wait_needed = False
 done = False
+t = -time.time()
 
 while not done:
 
@@ -122,7 +123,10 @@ while not done:
         wait_needed = not gaze_vector_consumed and not head_pose_consumed and not eyes_consumed and not face_consumed
         done = len(q)<1     
     
+t += time.time()
 feed.close()
+
+print(f'Done\n\nTotal Processing Time: {t:.4} s')
 
 if args.stats:
     print('\nLayer-wise Execution Time')
