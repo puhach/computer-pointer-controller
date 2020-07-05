@@ -1,14 +1,9 @@
 # Computer Pointer Controller
 
-*TODO:* Write a short introduction to your project
-
-Introduction
-
 Human vision performs a variety of tasks to interpret the surrounding environment. Many of them have been researched and automated by deep learning. This project combines several such models from the Intel Distribution of OpenVINO Toolkit to control a mouse pointer using eye gaze. The first step is to identify faces and extract a face from an input video stream captured from a webcam or a video file. Then we extract facial landmarks and find the orientation of the face by means of a head pose estimation model. Knowing the head pose and facial landmarks, we can find the orientation of the eye gaze using a gaze estimation model. Finally, the mouse pointer is moved in the direction of the eye gaze. 
 
 
 ## Project Set Up and Installation
-*TODO:* Explain the setup procedures to run your project. For instance, this can include your project directory structure, the models you need to download and where to place them etc. Also include details about how to install the dependencies your project requires.
 
 ### Install the Intel Distribution of OpenVINO Toolkit
 
@@ -28,7 +23,7 @@ Now activate the environment:
 conda activate computer-pointer-controller
 ```
 
-To install prerequisites (argparse and pyautogui) run:
+To install necessary Python packages run:
 ```
 pip install -r requirements.txt
 ```
@@ -91,4 +86,23 @@ The project tree should finally look like this:
 ```    
 
 
+
+## Demo
+
+Before launching the app make sure to activate the project's virtual environment (see "Project Set Up and Installation" section for guidelines on creating the virtual environment). Also you need to have OpenVINO initialized. Assuming the default installation path, it can be done by this command:
+```
+source /opt/intel/openvino/bin/setupvars.sh -pyver 3.6
+```
+
+The main script is located in the _src_ folder. In order to run the application you need to provide the input file:
+```
+python main.py --input ../bin/demo.mp4
+```
+
+Or you can use a webcam stream:
+```
+python main.py --input cam
+```
+
+Other command line arguments are optional. See the "Documentation" section for details.
 
