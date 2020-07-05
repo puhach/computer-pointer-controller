@@ -106,3 +106,22 @@ python main.py --input cam
 
 Other command line arguments are optional. See the "Documentation" section for details.
 
+
+## Documentation
+*TODO:* Include any documentation that users might need to better understand your project code. For instance, this is a good place to explain the command line arguments that your project supports.
+
+## Benchmarks
+*TODO:* Include the benchmark results of running your model on multiple hardwares and multiple model precisions. Your benchmarks can include: model loading time, input/output processing time, model inference time etc.
+
+This project can use models in three precisions: FP32, FP16, and FP32-INT8. The only harware available to me is Core i7 4712HQ (4th gen, not officially supported by OpenVINO), so the benchmark includes only CPU results. The table below shows total processing time (in seconds) for different combinations of model precisions and levels of concurrency.
+
+|                 | FP32  | FP16  | FP32-INT8 |
+|-----------------|-------|-------|-----------|
+| Synchronous (0) | 15.87 | 17.43 | 25.49     |
+| Asynchronous (1)| 12.54 | 12.59 | 17.76     |
+| Asynchronous (2)| 12.67 | 15.28 | 18.54     |
+| Asynchronous (4)| 12.5  | 12.19 | 17.57     |
+
+
+These results have been obtained in the silent mode (without video output and mouse control) using the "demo.mp4" input file. Each test was run 3 times, the measured time was then averaged. Model loading time for FP32 and FP16 precisions was around 1 second. For FP32-INT8 it was around 4.5 seconds.
+
