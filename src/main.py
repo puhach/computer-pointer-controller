@@ -24,6 +24,9 @@ parser.add_argument('--precision', type=str, default='FP32',
 parser.add_argument('--concurrency', type=int, default=1, 
                     help="Defines the number of concurrent requests each model can execute. "
                         "Pass zero for synchronous inference. Default is 1.")
+parser.add_argument('--confidence', type=float, default=0.5,
+                    help="Specifies face detection probability threshold. Must be in range from 0 to 1. "
+                        "Default is 0.5.")
 parser.add_argument('--failsafe', action='store_true', default=False, 
                     help="Enables the fail-safe feature of PyAutoGUI. By default, it's disabled.")
 parser.add_argument('--clean', action='store_true', default=False,
@@ -100,7 +103,7 @@ while not done:
         q[eyes_produced][2] = eyes
         eyes_produced += 1
 
-    face_consumed, face_box = faceDetector.consume_output(wait_needed, confidence=0.5)
+    face_consumed, face_box = faceDetector.consume_output(confidence=args.confidence, wait=wait_needed)
     if face_consumed:        
         face_img, face_box = faceDetector.preprocess_output(face_box, frame=q[faces_produced][0])
         q[faces_produced][1] = face_box
@@ -114,8 +117,10 @@ while not done:
         q.append([frame, None, None, None])
         faceDetector.feed_input(frame)
     else:
+        # When we reached the end of the input stream we have to wait for all frames to finish processing.
+        # To avoid idle running the loop, blocking wait is used when no output is available from any model.
         wait_needed = not gaze_vector_consumed and not head_pose_consumed and not eyes_consumed and not face_consumed
-        done = len(q)>0
+        done = len(q)<1     
     
 feed.close()
 
