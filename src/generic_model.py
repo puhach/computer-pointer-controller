@@ -40,6 +40,7 @@ class GenericModel:
         self.exe_network = self.core.load_network(network=self.network, device_name=device, num_requests=max(1, concurrency))
 
         self.concurrency = concurrency
+        self.request_index = 0
         self.waiting_queue = deque()
         self.output_queue = deque()
 
@@ -85,18 +86,26 @@ class GenericModel:
                 self.output_queue.append(None)
         
         else:   # Asyncronous inference
-
-            #if self.request_count >= self.concurrency:
+            
+            # If we hit the limit of concurrent requests, wait until something is finished
             if len(self.waiting_queue) >= self.concurrency:
-                # Can't start more requests, wait until something is finished
-                cur_request = self.waiting_queue.popleft()            
-                cur_request.wait(-1)
-                # TODO: can push get_perf_counts too
-                #self.output_queue.append(cur_request)
-                self.output_queue.append(cur_request.outputs)
-                #self.request_count -= 1
+                cur_request = self.waiting_queue.popleft()
+                # However, the waiting queue may contain requests, which are None (e.g. bad input indicators).
+                # We can remove a None request from the queue (so it's no longer overloaded) and pick the next
+                # free request (there must be one since we shortened the waiting queue and the number of busy 
+                # requests is always less than or equal to the length of the queue).
+                if cur_request and cur_request.wait(-1)==0:
+                    # TODO: can push get_perf_counts too
+                    self.output_queue.append(cur_request.outputs)
+                else:
+                    self.output_queue.append(None)
             else:
-                cur_request = self.exe_network.requests[len(self.waiting_queue)]
+                cur_request = None
+
+            if not cur_request:
+                cur_request = self.exe_network.requests[self.request_index]
+                self.request_index = (self.request_index + 1) % self.concurrency
+
 
             if input_dict:  
                 cur_request.async_infer(input_dict)
