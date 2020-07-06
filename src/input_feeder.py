@@ -24,37 +24,15 @@ class InputFeeder:
         
     
     def read_next(self):
+        """
+        Reads the next frame from the input stream. If the next frame is not available, returns None.
+        In case the source is a webcam, the frame will be automatically reflected.
+        """
         read, frame = self.cap.read()
         if read:
             return frame[:,::-1,:] if self.input=='cam' else frame
         else:
-            print('Reached the end of the input stream')
             return None
-
-#    def next_frame(self):
-#        """
-#        Yields a new frame read from the source (if available). 
-#        In case the source is a webcam, the frame will be automatically reflected.
-#        """
-#
-#        while True:
-#            read, frame = self.cap.read()
-#            if read:                                
-#                # What is left from our point of view is right from the camera viewpoint
-#                yield frame[:,::-1,:] if self.input=='cam' else frame
-#            else:
-#                print('Reached the end of the input stream')
-#                break
-
-    #def next_batch(self):
-    #    '''
-    #    Returns the next image from either a video file or webcam.
-    #    If input_type is 'image', then it returns the same image.
-    #    '''
-    #    while True:
-    #        for _ in range(10):
-    #            _, frame=self.cap.read()
-    #        yield frame
 
 
     def close(self):

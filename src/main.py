@@ -38,13 +38,12 @@ parser.add_argument('--silent', action='store_true', default=False,
                         "are disabled. Useful for performance measurement. Disabled by default.")
 parser.add_argument('--speed', type=str, default='medium', 
                     help="Controls the mouse speed. Possible values: fast, slow, medium. Default is medium.")
-# TODO: add more arguments (mouse controller speed and precision)
 
 args = parser.parse_args()
 
 feed = InputFeeder(args.input)
 
-t = -time.time()
+t = -time.time()    # measure model loading time
 faceDetector = FaceDetector(precision=args.precision, concurrency=args.concurrency, device=args.device, extensions=args.ext)
 eyeDetector = EyeDetector(precision=args.precision, concurrency=args.concurrency, device=args.device, extensions=args.ext)
 headPoseEstimator = HeadPoseEstimator(precision=args.precision, concurrency=args.concurrency, device=args.device, extensions=args.ext)
@@ -52,21 +51,22 @@ gazeEstimator = GazeEstimator(precision=args.precision, concurrency=args.concurr
 mouseController = MouseController(precision='high', speed=args.speed.lower(), failsafe=args.failsafe)
 t += time.time()
 
-print(f'Model Loading Time: {t:.2} s')
+print(f'Model Loading Time: {t:.4} s')
 
 print('Running...')
 
-q = deque()
+q = deque()     # the processing queue
 faces_produced = 0
 head_poses_produced = 0
 eyes_produced = 0
 hpae_consumed = 0
 wait_needed = False
 done = False
-t = -time.time()
+t = -time.time()    # measure processing time
 
 while not done:
 
+    # get a new gaze direction vector if available
     gaze_vector_consumed, gaze_vector = gazeEstimator.consume_output(wait_needed)
     if gaze_vector_consumed:
         frame, face_box, _, _ = q.popleft()
@@ -75,7 +75,7 @@ while not done:
         head_poses_produced -= 1
         hpae_consumed -= 1
 
-        if not args.silent:
+        if not args.silent: # the silent mode is used only for measurements 
             if gaze_vector:
                 gx, gy, _ = gaze_vector            
                 mouseController.move(gx, gy)
@@ -92,24 +92,28 @@ while not done:
             if cv2.waitKey(5) & 0xFF == 27:
                 break
 
+    # if a new pair of head pose and eyes is available, use them to estimate the gaze direction
     if hpae_consumed < min(head_poses_produced, eyes_produced):
         left_eye, right_eye = q[hpae_consumed][2]
         head_pose_angles = q[hpae_consumed][3]
         hpae_consumed += 1
         gazeEstimator.feed_input(left_eye, right_eye, head_pose_angles)
 
+    # get a new head pose if available
     head_pose_consumed, head_pose_angles = headPoseEstimator.consume_output(wait_needed)
     if head_pose_consumed:
         q[head_poses_produced][3] = head_pose_angles
         head_poses_produced += 1
 
+    # get a new pair of eye images if available
     eyes_consumed, eye_boxes = eyeDetector.consume_output(wait_needed)
     if eyes_consumed:
-        frame, face_box, _, _ = q[eyes_produced]
+        frame, face_box, _, _ = q[eyes_produced]    # the corresponding frame and the face bounding box for this detection
         eyes = eyeDetector.preprocess_output(eye_boxes, face_image=helpers.crop(frame, face_box))
         q[eyes_produced][2] = eyes
         eyes_produced += 1
 
+    # get a new face and the bounding box if available
     face_consumed, face_box = faceDetector.consume_output(confidence=args.confidence, wait=wait_needed)
     if face_consumed:        
         face_img, face_box = faceDetector.preprocess_output(face_box, frame=q[faces_produced][0])
@@ -118,7 +122,7 @@ while not done:
         eyeDetector.feed_input(face_img)
         headPoseEstimator.feed_input(face_img)
 
-    frame = feed.read_next()
+    frame = feed.read_next()    # get the next frame from the input feed
     if frame is not None:
         # [original frame, face box, eyes, head pose]
         q.append([frame, None, None, None])
