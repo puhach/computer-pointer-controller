@@ -113,7 +113,7 @@ Other command line arguments are optional. See the "Documentation" section for d
 ## Benchmarks
 *TODO:* Include the benchmark results of running your model on multiple hardwares and multiple model precisions. Your benchmarks can include: model loading time, input/output processing time, model inference time etc.
 
-This project can use models in three precisions: FP32, FP16, and FP32-INT8. The only harware available to me is Core i7 4712HQ (4th gen, not officially supported by OpenVINO), so the benchmark includes only CPU results. The table below shows total processing time (in seconds) for different combinations of model precisions and levels of concurrency.
+This project can use models in three precisions: FP32, FP16, and FP32-INT8. The only harware available to me is Core i7 4712HQ (4th gen, not officially supported by OpenVINO), so the benchmark includes only CPU results. The table below shows the processing time (in seconds) for different combinations of model precisions and levels of concurrency (see the "Async Inference" section for concurrency implementation details).
 
 |                 | FP32  | FP16  | FP32-INT8 |
 |-----------------|-------|-------|-----------|
@@ -123,15 +123,43 @@ This project can use models in three precisions: FP32, FP16, and FP32-INT8. The 
 | Asynchronous (4)| 12.5  | 12.19 | 17.57     |
 
 
-These results have been obtained in the silent mode (without video output and mouse control) using the "demo.mp4" input file. Each test was run 3 times, the measured time was then averaged. Model loading time for FP32 and FP16 precisions was around 1 second. For FP32-INT8 it was around 4.5 seconds.
+These results have been obtained in the silent mode (without video output and mouse control) using the "demo.mp4" input file. This way we minimize the delays caused by PyAutoGUI and OpenCV, so the processing time is dominated by the inference time. Each test was run 3 times, the measured time was then averaged. Model loading time for FP32 and FP16 precisions was around 1 second. For FP32-INT8 it took around 4.5 seconds.
 
 
 ## Results
 *TODO:* Discuss the benchmark results and explain why you are getting the results you are getting. For instance, explain why there is difference in inference time for FP32, FP16 and INT8 models.
 
-These benchmark results suggest that models in FP32 precision work faster on my hardware. This is probably because CPU is optimized for FP32 precision, lower precision models may incur computational overhead connected with internal upscaling to FP32. However, on different hardware lower precision models may show better performance due to reduced memory usage and faster data transfer. 
+These benchmark results suggest that models in FP32 precision work faster on my hardware. This is probably because CPU is optimized for FP32 precision. Lower precision models may incur computational overhead connected with internal upscaling to FP32. However, on different hardware lower precision models may show better performance due to reduced memory usage and faster data transfer. 
 
 Another point to notice is asynchronous inference, which improves performance regardless of the precision used. That said, increasing the number of parallel requests does not seem to speed up things further. This is again hardware-dependent: Xeon processors and newer Core processors are likely to be capable of doing more requests simultaneously. 
 
 As far as accuracy is concerned, no visible differences were noticed between FP32, FP16, and FP32-INT8 models.
+
+
+## Stand Out Suggestions
+This is where you can provide information about the stand out suggestions that you have attempted.
+
+The application benchmarks the time it takes to run different parts of the inference pipeline by means of the get_perf_counts API. Specify the `--stats` command line argument to print the execution time for each model layer:
+```
+python main.py --input ../bin/demo.mp4 --stats
+```
+
+In case we are interested in statistics only, the camera feed and mouse controller can be disabled. This is called a silent mode, which can be activated by the `--silent` parameter:
+```
+python main.py --input ../bin/demo.mp4 --stats --silent
+```
+It eliminates the delays caused by the mouse controller and GUI event handling (e.g. OpenCV's waitKey). As a consequence, processing an input video file on the test machine takes about 10 times less time in the silent mode as compared to the normal GUI mode with a mouse controller on a medium speed. This is due to the fact that the mouse controller animation takes the most time.
+
+
+Both synchronous and asynchronous inference modes are implemented in the project. In addition to that, the number of asynchronous requests can be controlled by the `--concurrency` parameter:
+```
+python main.py --input cam --concurrency 4 
+```
+
+Set concurrency to zero to disable the asynchronous mode: 
+```
+python main.py --input cam --concurrency 0
+```
+
+See the "Async Inference" sections for more details about concurrency implementation.
 
