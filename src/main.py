@@ -49,7 +49,7 @@ faceDetector = FaceDetector(precision=args.precision, concurrency=args.concurren
 eyeDetector = EyeDetector(precision=args.precision, concurrency=args.concurrency, device=args.device, extensions=args.ext)
 headPoseEstimator = HeadPoseEstimator(precision=args.precision, concurrency=args.concurrency, device=args.device, extensions=args.ext)
 gazeEstimator = GazeEstimator(precision=args.precision, concurrency=args.concurrency, device=args.device, extensions=args.ext)
-mouseController = MouseController(precision='medium', speed=args.speed.lower(), failsafe=args.failsafe)
+mouseController = MouseController(precision='high', speed=args.speed.lower(), failsafe=args.failsafe)
 t += time.time()
 
 print(f'Model Loading Time: {t:.2} s')
