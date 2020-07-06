@@ -47,6 +47,9 @@ class GenericModel:
 
 
     def feed_input(self, image):
+        """
+        Creates the input dictionary from the input image and feeds it to the model for inference. 
+        """
         if image is None:
             input_dict = None
         else:
@@ -55,6 +58,11 @@ class GenericModel:
 
 
     def feed_input_dict(self, input_dict):
+        """
+        Takes in the input dictionary and feeds it to the model for inference.
+        If the inference mode is synchronous or the number of asynchronous requests
+        exceed the limit, the call will block until at least one request is completed.
+        """
 
         if self.concurrency == 0:   # Synchronous inference            
             if input_dict:
@@ -78,12 +86,7 @@ class GenericModel:
                     self._augment_perf_counts(cur_request.get_perf_counts())
                 else:
                     output_dict = None
-                self.output_queue.append(output_dict)
-                #if cur_request and cur_request.wait(-1)==0:
-                #    self.output_queue.append(cur_request.outputs)
-                #    self._augment_perf_counts(cur_request.get_perf_counts())
-                #else:
-                #    self.output_queue.append(None)
+                self.output_queue.append(output_dict)                
             else:
                 cur_request = None
 
@@ -102,6 +105,15 @@ class GenericModel:
 
 
     def consume_output_dict(self, wait):
+        """
+        Retrieves the output dictionary from the inference results. Returns a tuple. 
+        The first value indicates whether the result was retrieved. The second item
+        is the output dictionary. The wait parameter specifies whether the function 
+        has to wait for the current inference request to finish in case no result is 
+        available at the moment of the call. The function never waits if there are no
+        busy requests or the result is already available.
+        """
+
         if self.output_queue:
             return True, self.output_queue.popleft()
 
@@ -128,6 +140,13 @@ class GenericModel:
         return False, None  
 
     def consume_output(self, wait):
+        """
+        Extracts the inference results from the inference output dictionary.
+        Returns a tuple. The first value indicates whether the result was retrieved.
+        The second value is the inference result (depends on the model used). 
+        The wait parameter specifies whether the function should wait for the 
+        current inference request to finish if no result is available.
+        """
         consumed, output_dict = self.consume_output_dict(wait)
         output = output_dict[self.output_name] if output_dict else None
         return consumed, output
@@ -152,7 +171,9 @@ class GenericModel:
         print(title)
         if self.stats:
             for layer_name, execution_time in self.stats.items():
-                print(f'{layer_name} : {execution_time} ms')
+                # cpu_time and real_time seem to be measured in microseconds, 
+                # but the documentation is not really clear about it
+                print(f'{layer_name} : {execution_time} us')    
         else:
             print('No data')
 

@@ -3,7 +3,7 @@ import helpers
 
 class EyeDetector(GenericModel):
     """
-    A class for eye detection and extraction.
+    A class for eye detection.
     """
     def __init__(self, precision, concurrency, device='CPU', extensions=None):
         """
@@ -20,11 +20,22 @@ class EyeDetector(GenericModel):
 
 
     def feed_input(self, face_image):
+        """
+        Preprocesses the input image and feeds it to the model for inference.
+        Depending on the inference mode, the call may be blocking or not.
+        """
         image_preprocessed = self._preprocess_input(face_image, self.input_shape[3], self.input_shape[2])
         super().feed_input(image_preprocessed)
 
 
     def consume_output(self, wait_needed):
+        """
+        Retrieves the eye bounding boxes from the detection results. Returns a tuple. 
+        The first value indicates whether the result was retrieved. The second item
+        is a tuple containing eye bouding boxes scaled to the 0..1 range. 
+        The wait parameter specifies whether the function has to wait for the current
+        inference request to finish in case no result is available at the moment of the call.
+        """
         consumed, landmarks = super().consume_output(wait_needed)
         if consumed and landmarks is not None:
             eye_boxes = self._get_eye_boxes(landmarks)
@@ -34,6 +45,10 @@ class EyeDetector(GenericModel):
 
 
     def preprocess_output(self, eye_boxes, face_image):
+        """
+        Scales the eye bounding boxes from the 0..1 range to the size of the face image.
+        Returns a tuple of cropped left and right eye images. 
+        """
         if face_image is not None and face_image.size>0 and eye_boxes and eye_boxes[0] and eye_boxes[1]:
             left_eye_box = helpers.fit(eye_boxes[0], face_image)
             left_eye = helpers.crop(face_image, left_eye_box)

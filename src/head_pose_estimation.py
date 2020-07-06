@@ -22,11 +22,22 @@ class HeadPoseEstimator(GenericModel):
 
 
     def feed_input(self, face_image):
+        """
+        Takes in the face image, preprocesses it, and feeds to the model for inference.
+        Depending on the inference mode, the call may be blocking or not.
+        """
         face_image_preprocessed = self._preprocess_input(face_image, 
             width=self.input_shape[3], height=self.input_shape[2])
         super().feed_input(face_image_preprocessed)
 
     def consume_output(self, wait):
+        """
+        Retrieves the head pose angles from the estimation results. Returns a tuple. 
+        The first value indicates whether the result was retrieved. The second item
+        is a vector containing the yaw, pitch, and roll angles in degrees. 
+        The wait parameter specifies whether the function has to wait for the current
+        inference request to finish in case no result is available at the moment of the call.
+        """
         consumed, output_dict = super().consume_output_dict(wait)
         if consumed and output_dict:
             head_pose = ( output_dict[self.yaw_name][0,0], output_dict[self.pitch_name][0,0], output_dict[self.roll_name][0,0] )

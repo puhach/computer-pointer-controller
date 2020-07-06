@@ -26,6 +26,11 @@ class GazeEstimator(GenericModel):
 
 
     def feed_input(self, left_eye, right_eye, head_pose_angles):
+        """
+        Takes in the left and right eye images along with the head pose angles and feeds tnem to
+        the model for inference. The eye images are automatically preprocessed to match the size
+        expected by the model. Depending on the inference model the call may be blocking or not.
+        """
         if left_eye is not None and right_eye is not None and left_eye.size>0 and right_eye.size>0 and head_pose_angles:
             left_eye_preprocessed = self._preprocess_input(left_eye, width=self.left_eye_input_shape[3], height=self.left_eye_input_shape[2])
             right_eye_preprocessed = self._preprocess_input(right_eye, width=self.right_eye_input_shape[3], height=self.right_eye_input_shape[2])
@@ -42,6 +47,13 @@ class GazeEstimator(GenericModel):
 
 
     def consume_output(self, wait):
+        """
+        Retrieves the gaze direction vector from the estimation results. Returns a tuple. 
+        The first value indicates whether the result was retrieved. The second item
+        is a non-normalized 3D vector of the gaze direction. 
+        The wait parameter specifies whether the function has to wait for the current
+        inference request to finish in case no result is available at the moment of the call.
+        """
         consumed, outputs = super().consume_output(wait)
         if consumed and outputs is not None:
             gaze_vector = tuple(outputs[0])

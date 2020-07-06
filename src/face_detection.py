@@ -32,11 +32,9 @@ class FaceDetector(GenericModel):
     def consume_output(self, confidence, wait):
         """
         Retrieves the face bounding box from the detection results. Returns a tuple. 
-        The first value indicates whether the result was retrieved. The second item
-        is a bounding box of the face scaled to the 0..1 range. If there is no detection 
-        with a probability higher or equal to the confidence value, the bounding box 
-        will be None. 
-
+        The first value indicates whether the result was retrieved. The second item is 
+        a bounding box of the face scaled to the 0..1 range. If there is no detection with 
+        a probability higher or equal to the confidence value, the bounding box will be None. 
         The wait parameter specifies whether the function has to wait for the current
         inference request to finish in case no result is available at the moment of the call.
         """
