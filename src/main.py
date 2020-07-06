@@ -36,17 +36,21 @@ parser.add_argument('--stats', action='store_true', default=False,
 parser.add_argument('--silent', action='store_true', default=False, 
                     help="Enables the silent mode when video output and the mouse control feature "
                         "are disabled. Useful for performance measurement. Disabled by default.")
-# TODO: add more arguments
+# TODO: add more arguments (mouse controller speed and precision)
 
 args = parser.parse_args()
 
 feed = InputFeeder(args.input)
+
+t = -time.time()
 faceDetector = FaceDetector(precision=args.precision, concurrency=args.concurrency, device=args.device, extensions=args.ext)
 eyeDetector = EyeDetector(precision=args.precision, concurrency=args.concurrency, device=args.device, extensions=args.ext)
 headPoseEstimator = HeadPoseEstimator(precision=args.precision, concurrency=args.concurrency, device=args.device, extensions=args.ext)
 gazeEstimator = GazeEstimator(precision=args.precision, concurrency=args.concurrency, device=args.device, extensions=args.ext)
 mouseController = MouseController(precision='medium', speed='medium', failsafe=args.failsafe)
+t += time.time()
 
+print(f'Model Loading Time: {t:.2} s')
 
 print('Running...')
 
