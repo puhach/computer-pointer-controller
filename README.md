@@ -108,7 +108,6 @@ Other command line arguments are optional. See the "Documentation" section for d
 
 
 ## Documentation
-*TODO:* Include any documentation that users might need to better understand your project code. For instance, this is a good place to explain the command line arguments that your project supports.
 
 The following table lists the command line arguments supported by the application.
 
@@ -127,8 +126,8 @@ The following table lists the command line arguments supported by the applicatio
 |  --silent         | Enables the silent mode when video output and the mouse control feature are disabled. Useful for performance measurement. Disabled by default. |
 |  --speed SPEED    | Controls the mouse speed. Possible values: fast, slow, medium. Default is medium. |
 
+
 ## Benchmarks
-*TODO:* Include the benchmark results of running your model on multiple hardwares and multiple model precisions. Your benchmarks can include: model loading time, input/output processing time, model inference time etc.
 
 This project can use models in three precisions: FP32, FP16, and FP32-INT8. The only harware available to me is Core i7 4712HQ (4th gen, not officially supported by OpenVINO), so the benchmark includes only CPU results. The table below shows the processing time (in seconds) for different combinations of model precisions and levels of concurrency (see the "Async Inference" section for concurrency implementation details).
 
@@ -144,17 +143,15 @@ These results have been obtained in the silent mode (without video output and mo
 
 
 ## Results
-*TODO:* Discuss the benchmark results and explain why you are getting the results you are getting. For instance, explain why there is difference in inference time for FP32, FP16 and INT8 models.
 
-These benchmark results suggest that models in FP32 precision work faster on my hardware. This is probably because CPU is optimized for FP32 precision. Lower precision models may incur computational overhead connected with internal upscaling to FP32. However, on different hardware lower precision models may show better performance due to reduced memory usage and faster data transfer. 
+These benchmark results suggest that models in FP32 precision work faster on my hardware (CPU). This is probably because CPU is optimized for FP32 precision. Lower precision models may incur computational overhead connected with internal upscaling to FP32. However, on different hardware lower precision models may show better performance due to reduced memory usage and faster data transfer. 
 
-Another point to notice is asynchronous inference, which improves performance regardless of the precision used. That said, increasing the number of parallel requests does not seem to speed up things further. This is again hardware-dependent: Xeon processors and newer Core processors are likely to be capable of doing more requests simultaneously. 
+Another point to notice is asynchronous inference, which improves performance regardless of the precision used. That said, increasing the number of parallel requests per model (shown in braces) does not seem to speed up things further. This is again hardware-dependent: Xeon processors and newer Core processors are likely to be capable of doing more requests simultaneously. 
 
 As far as accuracy is concerned, no visible differences were noticed between FP32, FP16, and FP32-INT8 models.
 
 
 ## Stand Out Suggestions
-This is where you can provide information about the stand out suggestions that you have attempted.
 
 The application benchmarks the time it takes to run different parts of the inference pipeline by means of the get_perf_counts API. Specify the `--stats` command line argument to print the execution time for each model layer:
 ```
@@ -182,10 +179,15 @@ See the "Async Inference" sections for more details about concurrency implementa
 
 
 ### Async Inference
-If you have used Async Inference in your code, benchmark the results and explain its effects on power and performance of your project.
 
-The application can run inference in the synchronous and asynchronous modes. In the synchronous mode program execution cannot continue until inference request is completed. In the asynchronous mode the program can continue without waiting for inference results as long the number of simultaneous inference requests does not exceed a certain limit. This limit is controlled by the concurrency parameter. When concurrency is 0, the inference pipeline works in the synchronous mode. Concurrency greater than zero enables asynchronous mode where each model can execute the number of parallel requests equal to the concurrency parameter value. By default, the concurrency is 1, which means all four models (face detector, eye detector, head pose estimator, and gaze direction estimator) can run in parallel, but a single model can use only one request at a time. 
+The application can run inference in the synchronous and asynchronous modes. In the synchronous mode program execution cannot continue until inference request is completed. In the asynchronous mode the program can continue without waiting for inference results as long the number of simultaneous inference requests does not exceed a certain limit. This limit is controlled by the concurrency parameter. When concurrency is 0, the inference flow works in the synchronous mode. Concurrency greater than zero enables asynchronous mode where each model can execute the number of parallel requests equal to the concurrency parameter value. By default, the concurrency is 1, which means all four models (face detector, eye detector, head pose estimator, and gaze direction estimator) can run in parallel, but a single model can use only one request at a time. 
 
-The "Benchmarks" section shows that asynchronous inference improves performance as compared to the synchronous mode. Increasing the number of concurrent requests to values greater than 1 did not show a tangible difference in performance on the test CPU.
+The "Benchmarks" section shows that asynchronous inference improves performance as compared to the synchronous mode. Increasing the number of concurrent requests per model to values greater than 1 did not show a tangible difference in performance on the test CPU.
 
+
+### Edge Cases
+
+The app needs exactly one face to appear in a frame. If there are many, it picks the first one which has a detection confidence not less than a threshold value. In case a face cannot be confidently detected, this frame is not used for mouse control (the output window shows the original frame and the mouse pointer's position remains the same). Possible reasons for detection to fail are bad lighting (too dark or too bright), angle shot, face occlusion. Eyeglasses can make detections less accurate. In my tests it proved to work fine with transparent glasses. However, if a person is wearing sunglasses, there is no way to estimate the gaze direction.
+
+Another caveat is that bounding boxes are occasionally empty (have zero width or height). It may happen when a face is too far away from the camera or a head is turned by a wide angle. Empty bounding boxes are likely to cause crashes and hence are treated the same way as detection failures. Asynchronous inference makes handling of failures more difficult since results are not tested for validity immediately after inference call, but they must come out in the same sequence as input frames. To tackle this, there is a processing queue which contains the original frames along with corresponding intermediate model outputs. Once the intermediate output is available (either valid or invalid), it is mapped onto the corresponding frame. Finally, when a gaze vector is produced the result is checked for validity. This way we avoid skipping of input frames (skipping can make video output not smooth when several detection failures occur in a row). As a consequence, each model in the inference pipeline must be ready to handle invalid inputs and pass them through obeying the order of results. 
 
