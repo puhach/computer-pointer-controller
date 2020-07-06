@@ -110,6 +110,23 @@ Other command line arguments are optional. See the "Documentation" section for d
 ## Documentation
 *TODO:* Include any documentation that users might need to better understand your project code. For instance, this is a good place to explain the command line arguments that your project supports.
 
+The following table lists the command line arguments supported by the application.
+
+| Parameter         | Explanation |
+|-------------------|-------------|
+|  -h, --help       | Shows the help message and exits |
+|  --input INPUT    | An input file name or 'cam' to capture input from a webcam. |
+|  --device DEVICE  | Device name to perform inference on. Defaults to CPU. |
+|  --ext EXT        | Specifies the extension to use with the device. |
+| --precision PRECISION | Specifies the model precision to use: FP32, FP16, or FP32-INT8. Default is FP32. |
+| --concurrency CONCURRENCY | Defines the number of concurrent requests each model can execute. Pass zero for synchronous inference. Default is 1. |
+|  --confidence CONFIDENCE | Specifies face detection probability threshold. Must be in range from 0 to 1. Default is 0.5. |
+|  --failsafe       | Enables the fail-safe feature of PyAutoGUI. By default, it's disabled. |
+|  --clean          | Enables visualization of intermediate model outputs. Active by default. |
+|  --stats          | Prints per-layer performance statistics. Disabled by default. |
+|  --silent         | Enables the silent mode when video output and the mouse control feature are disabled. Useful for performance measurement. Disabled by default. |
+|  --speed SPEED    | Controls the mouse speed. Possible values: fast, slow, medium. Default is medium. |
+
 ## Benchmarks
 *TODO:* Include the benchmark results of running your model on multiple hardwares and multiple model precisions. Your benchmarks can include: model loading time, input/output processing time, model inference time etc.
 
@@ -170,4 +187,5 @@ If you have used Async Inference in your code, benchmark the results and explain
 The application can run inference in the synchronous and asynchronous modes. In the synchronous mode program execution cannot continue until inference request is completed. In the asynchronous mode the program can continue without waiting for inference results as long the number of simultaneous inference requests does not exceed a certain limit. This limit is controlled by the concurrency parameter. When concurrency is 0, the inference pipeline works in the synchronous mode. Concurrency greater than zero enables asynchronous mode where each model can execute the number of parallel requests equal to the concurrency parameter value. By default, the concurrency is 1, which means all four models (face detector, eye detector, head pose estimator, and gaze direction estimator) can run in parallel, but a single model can use only one request at a time. 
 
 The "Benchmarks" section shows that asynchronous inference improves performance as compared to the synchronous mode. Increasing the number of concurrent requests to values greater than 1 did not show a tangible difference in performance on the test CPU.
+
 
