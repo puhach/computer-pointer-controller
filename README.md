@@ -163,3 +163,11 @@ python main.py --input cam --concurrency 0
 
 See the "Async Inference" sections for more details about concurrency implementation.
 
+
+### Async Inference
+If you have used Async Inference in your code, benchmark the results and explain its effects on power and performance of your project.
+
+The application can run inference in the synchronous and asynchronous modes. In the synchronous mode program execution cannot continue until inference request is completed. In the asynchronous mode the program can continue without waiting for inference results as long the number of simultaneous inference requests does not exceed a certain limit. This limit is controlled by the concurrency parameter. When concurrency is 0, the inference pipeline works in the synchronous mode. Concurrency greater than zero enables asynchronous mode where each model can execute the number of parallel requests equal to the concurrency parameter value. By default, the concurrency is 1, which means all four models (face detector, eye detector, head pose estimator, and gaze direction estimator) can run in parallel, but a single model can use only one request at a time. 
+
+The "Benchmarks" section shows that asynchronous inference improves performance as compared to the synchronous mode. Increasing the number of concurrent requests to values greater than 1 did not show a tangible difference in performance on the test CPU.
+
