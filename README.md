@@ -125,7 +125,7 @@ The following table lists the command line arguments supported by the applicatio
 |  --stats          | Prints per-layer performance statistics. Disabled by default. |
 |  --silent         | Enables the silent mode when video output and the mouse control feature are disabled. Useful for performance measurement. Disabled by default. |
 |  --speed SPEED    | Controls the mouse speed. Possible values: fast, slow, medium. Default is medium. |
-
+|  --log LOG        | Specifies the log file. Leave it empty to print log messages to the console (default behavior). |
 
 ## Benchmarks
 
