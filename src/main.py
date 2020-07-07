@@ -9,8 +9,8 @@ import helpers
 import cv2
 import argparse
 import time
+import logging
 
-print('Initialization...')
 
 parser = argparse.ArgumentParser(description="Computer Pointer Controller")
 parser.add_argument('--input', type=str, required=True,
@@ -38,8 +38,15 @@ parser.add_argument('--silent', action='store_true', default=False,
                         "are disabled. Useful for performance measurement. Disabled by default.")
 parser.add_argument('--speed', type=str, default='medium', 
                     help="Controls the mouse speed. Possible values: fast, slow, medium. Default is medium.")
+parser.add_argument('--log', type=str, default=None, 
+                    help="Specifies the log file. Leave it empty to print log messages to the console (default).")
 
 args = parser.parse_args()
+
+# Set up logging
+logging.basicConfig(filename=args.log, level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s",
+                    datefmt='%Y-%m-%d %I:%M:%S')
+logging.info('Initialization...')
 
 feed = InputFeeder(args.input)
 
@@ -51,9 +58,9 @@ gazeEstimator = GazeEstimator(precision=args.precision, concurrency=args.concurr
 mouseController = MouseController(precision='high', speed=args.speed.lower(), failsafe=args.failsafe)
 t += time.time()
 
-print(f'Model Loading Time: {t:.4} s')
+logging.info(f'Model Loading Time: {t:.4} s')
 
-print('Running...')
+logging.info('Running...')
 
 q = deque()     # the processing queue
 faces_produced = 0
@@ -136,11 +143,14 @@ while not done:
 t += time.time()
 feed.close()
 
-print(f'Done\n\nTotal Processing Time: {t:.4} s')
+logging.info('Done')
+logging.info(f'Total Processing Time: {t:.4} s\n')
 
 if args.stats:
-    print('\nLayer-wise Execution Time')
+    logging.info('Layer-wise Execution Time')
     faceDetector.print_stats(title="\nFace Detector")
     eyeDetector.print_stats(title="\nEye Detector")
     headPoseEstimator.print_stats(title="\nHead Pose Estimator")
     gazeEstimator.print_stats(title="\nGaze Direction Estimator")
+
+

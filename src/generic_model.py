@@ -2,6 +2,7 @@ from openvino.inference_engine import IENetwork, IECore
 from collections import deque, Counter
 import cv2
 import numpy as np
+import logging
 
 class GenericModel:
 
@@ -166,16 +167,24 @@ class GenericModel:
 
     def print_stats(self, title):
         """
-        Prints layer-wise performance to the console.
+        Prints layer-wise performance of the model.
         """
-        print(title)
+        
+        # No need to show the log level and datetime for a multiline message
+        logger = logging.getLogger()
+        original_formatter = logger.handlers[0].formatter        
+        logger.handlers[0].setFormatter(logging.Formatter(fmt='%(message)s'))        
+        logger.info(title)
+
         if self.stats:
             for layer_name, execution_time in self.stats.items():
                 # cpu_time and real_time seem to be measured in microseconds, 
                 # but the documentation is not really clear about it
-                print(f'{layer_name} : {execution_time} us')    
+                logger.info(f'{layer_name} : {execution_time} us')    
         else:
-            print('No data')
+            logger.info('No data')
+
+        logger.handlers[0].setFormatter(original_formatter) # restore the log format
 
 
     def _preprocess_input(self, image, width, height):
