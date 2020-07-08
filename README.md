@@ -93,12 +93,12 @@ The project tree should finally look like this:
 
 ## Demo
 
-Before launching the app make sure to activate the project's virtual environment (see "Project Set Up and Installation" section for guidelines on creating the virtual environment). Also you need to have OpenVINO initialized. Assuming the default installation path, it can be done by this command:
+Before launching the app make sure to activate the project's virtual environment (see "Project Set Up and Installation" section for guidelines on creating the virtual environment). Also, you need to have OpenVINO initialized. Assuming the default installation path, it can be done by this command:
 ```
 source /opt/intel/openvino/bin/setupvars.sh -pyver 3.6
 ```
 
-The main script is located in the _src_ folder. In order to run the application you need to provide the input file:
+The main script is located in the _src_ folder. In order to run the application, you need to provide the input file:
 ```
 python main.py --input ../bin/demo.mp4
 ```
@@ -117,7 +117,7 @@ The following table lists the command line arguments supported by the applicatio
 
 | Parameter         | Explanation |
 |-------------------|-------------|
-|  -h, --help       | Shows the help message and exits |
+|  -h, --help       | Shows the help message and exits. |
 |  --input INPUT    | An input file name or 'cam' to capture input from a webcam. |
 |  --device DEVICE  | Device name to perform inference on. Defaults to CPU. |
 |  --ext EXT        | Specifies the extension to use with the device. |
