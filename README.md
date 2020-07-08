@@ -131,29 +131,6 @@ The following table lists the command line arguments supported by the applicatio
 |  --speed SPEED    | Controls the mouse speed. Possible values: fast, slow, medium. Default is medium. |
 |  --log LOG        | Specifies the log file. Leave it empty to print log messages to the console (default behavior). |
 
-## Benchmarks
-
-This project can use models in three precisions: FP32, FP16, and FP32-INT8. The only harware available to me is Core i7 4712HQ (4th gen, not officially supported by OpenVINO), so the benchmark includes only CPU results. The table below shows the processing time (in seconds) for different combinations of model precisions and levels of concurrency (see the "Async Inference" section for concurrency implementation details).
-
-|                 | FP32  | FP16  | FP32-INT8 |
-|-----------------|-------|-------|-----------|
-| Synchronous (0) | 15.87 | 17.43 | 25.49     |
-| Asynchronous (1)| 12.54 | 12.59 | 17.76     |
-| Asynchronous (2)| 12.67 | 15.28 | 18.54     |
-| Asynchronous (4)| 12.5  | 12.19 | 17.57     |
-
-
-These results have been obtained in the silent mode (without video output and mouse control) using the "demo.mp4" input file. This way we minimize the delays caused by PyAutoGUI and OpenCV, so the processing time is dominated by the inference time. Each test was run 3 times, the measured time was then averaged. Model loading time for FP32 and FP16 precisions was around 1 second. For FP32-INT8 it took around 4.5 seconds.
-
-
-## Results
-
-These benchmark results suggest that models in FP32 precision work faster on my hardware (CPU). This is probably because CPU is optimized for FP32 precision. Lower precision models may incur computational overhead connected with internal upscaling to FP32. However, on different hardware lower precision models may show better performance due to reduced memory usage and faster data transfer. 
-
-Another point to notice is asynchronous inference, which improves performance regardless of the precision used. That said, increasing the number of parallel requests per model (shown in braces) does not seem to speed up things further. This is again hardware-dependent: Xeon processors and newer Core processors are likely to be capable of doing more requests simultaneously. 
-
-As far as accuracy is concerned, no visible differences were noticed between FP32, FP16, and FP32-INT8 models.
-
 
 ## Stand Out Suggestions
 
@@ -193,4 +170,25 @@ The "Benchmarks" section shows that asynchronous inference improves performance 
 The app needs exactly one face to appear in a frame. If there are many, it picks the first one which has a detection confidence not less than a threshold value. In case a face cannot be confidently detected, this frame is not used for mouse control (the output window shows the original frame and the mouse pointer's position remains the same). Possible reasons for detection to fail are bad lighting (too dark or too bright), angle shot, face occlusion. Eyeglasses can make detections less accurate. In my tests it proved to work fine with transparent glasses. However, if a person is wearing sunglasses, there is no way to estimate the gaze direction.
 
 Another caveat is that bounding boxes are occasionally empty (have zero width or height). It may happen when a face is too far away from the camera or a head is turned by a wide angle. Empty bounding boxes are likely to cause crashes and hence are treated the same way as detection failures. Asynchronous inference makes handling of failures more difficult since results are not tested for validity immediately after inference call, but they must come out in the same sequence as input frames. To tackle this, there is a processing queue which contains the original frames along with corresponding intermediate model outputs. Once the intermediate output is available (either valid or invalid), it is mapped onto the corresponding frame. Finally, when a gaze vector is produced the result is checked for validity. This way we avoid skipping of input frames (skipping can make video output not smooth when several detection failures occur in a row). As a consequence, each model in the inference pipeline must be ready to handle invalid inputs and pass them through obeying the order of results. 
+
+
+## Benchmarks and Results
+
+This project can use models in three precisions: FP32, FP16, and FP32-INT8. The only harware available to me is Core i7 4712HQ (4th gen, not officially supported by OpenVINO), so the benchmark includes only CPU results. The table below shows the processing time (in seconds) for different combinations of model precisions and levels of concurrency (see the "Async Inference" section for concurrency implementation details).
+
+|                 | FP32  | FP16  | FP32-INT8 |
+|-----------------|-------|-------|-----------|
+| Synchronous (0) | 15.87 | 17.43 | 25.49     |
+| Asynchronous (1)| 12.54 | 12.59 | 17.76     |
+| Asynchronous (2)| 12.67 | 15.28 | 18.54     |
+| Asynchronous (4)| 12.5  | 12.19 | 17.57     |
+
+
+These measurements have been taken in the silent mode (without video output and mouse control) using the "demo.mp4" input file. This way we minimize the delays caused by PyAutoGUI and OpenCV, so the processing time is dominated by the inference time. Each test was run 3 times, the measured time was then averaged. Model loading time for FP32 and FP16 precisions was around 1 second. For FP32-INT8 it took around 4.5 seconds.
+
+The obtained benchmark results suggest that models in FP32 precision work faster on my hardware (CPU). This is probably because CPU is optimized for FP32 precision. Lower precision models may incur computational overhead connected with internal upscaling to FP32. However, on different hardware lower precision models may show better performance due to reduced memory usage and faster data transfer. 
+
+Another point to notice is asynchronous inference, which improves performance regardless of the precision used. That said, increasing the number of parallel requests per model (shown in braces) does not seem to speed up things further. This is again hardware-dependent: Xeon processors and newer Core processors are likely to be capable of doing more requests simultaneously. 
+
+As far as accuracy is concerned, no visible differences were noticed between FP32, FP16, and FP32-INT8 models.
 
