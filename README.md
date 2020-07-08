@@ -113,6 +113,8 @@ Other command line arguments are optional. See the "Documentation" section for d
 
 ## Documentation
 
+### Command Line Arguments
+
 The following table lists the command line arguments supported by the application.
 
 | Parameter         | Explanation |
@@ -132,12 +134,14 @@ The following table lists the command line arguments supported by the applicatio
 |  --log LOG        | Specifies the log file. Leave it empty to print log messages to the console (default behavior). |
 
 
-## Stand Out Suggestions
+### Layer-wise Performance Statistics
 
 The application benchmarks the time it takes to run different parts of the inference pipeline by means of the get_perf_counts API. Specify the `--stats` command line argument to print the execution time for each model layer:
 ```
 python main.py --input ../bin/demo.mp4 --stats
 ```
+
+### Silent Mode
 
 In case we are interested in statistics only, the camera feed and mouse controller can be disabled. This is called a silent mode, which can be activated by the `--silent` parameter:
 ```
