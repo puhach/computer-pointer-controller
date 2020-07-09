@@ -196,3 +196,7 @@ Another point to notice is asynchronous inference, which improves performance re
 
 As far as accuracy is concerned, no visible differences were noticed between FP32, FP16, and FP32-INT8 models.
 
+
+## Credits
+
+This project is based on the assignment from the [Intel Edge AI for IoT Developers](https://www.udacity.com/course/intel-edge-ai-for-iot-developers-nanodegree--nd131) program.
